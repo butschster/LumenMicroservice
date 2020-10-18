@@ -1,0 +1,51 @@
+{
+    "name": "butschster/lumen-microservice",
+    "description": "Package that helps you to use Lumen framework as a microservice through AMQP",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pavel Buchnev",
+            "email": "butschster@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.4",
+        "jms/serializer": "^3.9",
+        "illuminate/config": "^7.0|^8.0",
+        "illuminate/support": "^7.0|^8.0",
+        "illuminate/contracts": "^7.0|^8.0",
+        "illuminate/console": "^7.0|^8.0",
+        "illuminate/validation": "^7.0|^8.0",
+        "illuminate/pipeline": "^7.0|^8.0",
+        "phpdocumentor/reflection-docblock": "^5.2",
+        "php-amqplib/php-amqplib": "^2.12",
+        "psr/log": "^1.1",
+        "react/event-loop": "^1.1",
+        "react/promise": "^2.8",
+        "webmozart/assert": "^1.8",
+        "nunomaduro/collision": "^5.0"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.0",
+        "phpunit/phpunit": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Butschster\\Exchanger\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Butschster\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Butschster\\Exchanger\\ExchangerServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
