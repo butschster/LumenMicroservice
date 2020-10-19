@@ -1,10 +1,10 @@
 <?php
 
-namespace Butschster\Exchanger\Jms;
+namespace Butschster\Exchanger\Jms\Mapping;
 
 use Illuminate\Contracts\Config\Repository;
 
-class MappingConfig
+class Config
 {
     private Repository $repository;
 

@@ -2,9 +2,10 @@
 
 namespace Butschster\Exchanger\Exchange;
 
+use Butschster\Exchanger\Contracts\Exchange\Config as ConfigContract;
 use Illuminate\Contracts\Config\Repository;
 
-class Config
+class Config implements ConfigContract
 {
     private Repository $config;
 

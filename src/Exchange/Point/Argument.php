@@ -17,15 +17,7 @@ class Argument
     }
 
     /**
-     * @param string[] $classes
-     * @return bool
-     */
-    public function is(string ...$classes): bool
-    {
-        return in_array($this->getClass(), $classes);
-    }
-
-    /**
+     * Get method argument variable name
      * @return string
      */
     public function getName(): string
@@ -34,10 +26,21 @@ class Argument
     }
 
     /**
+     * Get method argument class name
      * @return string
      */
     public function getClass(): string
     {
         return $this->class;
+    }
+
+    /**
+     * Check if class is in given array
+     * @param string[] $classes
+     * @return bool
+     */
+    public function is(string ...$classes): bool
+    {
+        return in_array($this->getClass(), $classes);
     }
 }

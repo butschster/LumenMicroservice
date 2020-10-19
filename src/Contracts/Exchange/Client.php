@@ -38,7 +38,7 @@ interface Client
      * @param string $subject
      * @param string $payload
      */
-    public function call(string $subject, string $payload): void;
+    public function broadcast(string $subject, string $payload): void;
 
     /**
      * Set property to AMPQ connector

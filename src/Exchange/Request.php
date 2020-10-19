@@ -22,13 +22,31 @@ class Request implements RequestContract
         Serializer $serializer,
         Client $client,
         string $subject,
-        Payload $payload
+        ?Payload $payload = null
     )
     {
         $this->serializer = $serializer;
         $this->client = $client;
         $this->subject = $subject;
         $this->payload = $factory->createRequest($payload);
+    }
+
+    /**
+     * Get request subject
+     * @return string
+     */
+    public function getSubject(): string
+    {
+        return $this->subject;
+    }
+
+    /**
+     * Get request payload
+     * @return RequestPayload
+     */
+    public function getPayload(): RequestPayload
+    {
+        return $this->payload;
     }
 
     /** @inheritDoc */
@@ -41,9 +59,9 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
-    public function call(): void
+    public function broadcast(): void
     {
-        $this->client->call(
+        $this->client->broadcast(
             $this->subject,
             $this->serializer->serialize($this->payload)
         );
@@ -52,7 +70,6 @@ class Request implements RequestContract
     private function makeResponse(string $response, string $responseClass): ResponsePayload
     {
         $response = new Response($this->serializer, $response);
-
         return $response->mapClass($responseClass);
     }
 

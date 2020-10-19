@@ -31,8 +31,8 @@ class Message implements MessageContract
         ConsumerContract $consumer,
         string $body,
         string $subject,
-        ?string $correlationId,
-        ?string $replyTo,
+        ?string $correlationId = null,
+        ?string $replyTo = null,
         ?AMQPMessage $originalMessage = null
     )
     {

@@ -60,8 +60,8 @@ class Parser
                 $exchange,
                 $reflectionMethod->getName(),
                 $exchange->getName() . '.' . $subject,
-                $this->getMiddleware($comment),
                 $this->getParameters($reflectionMethod),
+                $this->getMiddleware($comment),
                 $this->getDisabledMiddleware($comment)
             );
         })->all();

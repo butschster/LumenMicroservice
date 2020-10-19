@@ -23,10 +23,8 @@ class Dispatcher
     private Serializer $serializer;
     private Container $container;
     private Handler $exceptionsHandler;
-    private LoggerInterface $logger;
 
     public function __construct(
-        LoggerInterface $logger,
         Handler $exceptionsHandler,
         Container $container,
         Serializer $serializer,
@@ -37,7 +35,6 @@ class Dispatcher
         $this->serializer = $serializer;
         $this->container = $container;
         $this->exceptionsHandler = $exceptionsHandler;
-        $this->logger = $logger;
     }
 
     /**
@@ -58,7 +55,7 @@ class Dispatcher
             $this->sendThroughPipeline($route->getMiddleware(), function () use ($route, $dependencies) {
                 $route->call($dependencies);
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->handleException($request, $e);
         }
     }
@@ -111,7 +108,7 @@ class Dispatcher
         }
 
         if ($dependency->is(LoggerInterface::class)) {
-            return $this->logger;
+            return $this->container->make(LoggerInterface::class);
         }
 
         throw new ParameterCannotBeResolvedException(
@@ -130,21 +127,17 @@ class Dispatcher
     {
         $this->exceptionsHandler->report($e);
         $this->exceptionsHandler->render($request, $e);
-
-        if (method_exists($this->logger, 'handleException')) {
-            $this->logger->handleException($this->exceptionsHandler, $e);
-        }
     }
 
     /**
      * Incomming request factory
      * @param Message $message
-     * @return \Butschster\Exchanger\Exchange\IncomingRequest
+     * @return IncomingRequest
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
-    private function makeIncomingRequest(Message $message): \Butschster\Exchanger\Exchange\IncomingRequest
+    private function makeIncomingRequest(Message $message): IncomingRequest
     {
-        $body = $message->getBody();
+        $body = $message->getPayload();
 
         /** @var RequestHeaders|null $headers */
         $headers = null;
@@ -155,7 +148,7 @@ class Dispatcher
             );
         }
 
-        return $this->container->make(\Butschster\Exchanger\Exchange\IncomingRequest::class, [
+        return $this->container->make(IncomingRequest::class, [
             'message' => $message,
             'headers' => $headers
         ]);

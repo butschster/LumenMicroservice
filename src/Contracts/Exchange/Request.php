@@ -17,5 +17,5 @@ interface Request
     /**
      * Broadcast data
      */
-    public function call(): void;
+    public function broadcast(): void;
 }

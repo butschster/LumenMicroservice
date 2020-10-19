@@ -1,6 +1,6 @@
 <?php
 
-namespace Butschster\Exchanger\Jms;
+namespace Butschster\Exchanger\Jms\Mapping;
 
 use JMS\Serializer\Metadata\PropertyMetadata as BasePropertyMetadata;
 

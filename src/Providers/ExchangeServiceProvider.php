@@ -2,7 +2,8 @@
 
 namespace Butschster\Exchanger\Providers;
 
-use Butschster\Exchanger\Jms\MappingDriver;
+use Butschster\Exchanger\Exchange\Config as ExchangeConfig;
+use Butschster\Exchanger\Jms\Mapping;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPSSLConnection;
 use Butschster\Exchanger\Amqp\Config;
@@ -35,6 +36,7 @@ class ExchangeServiceProvider extends ServiceProvider
 
     private function registerExchangeManager()
     {
+        $this->app->singleton(Exchange\Config::class, ExchangeConfig::class);
         $this->app->singleton(Exchange\Client::class, AmqpExchangeClient::class);
         $this->app->singleton(ExchangeManagerContract::class, ExchangeManager::class);
     }
@@ -75,6 +77,6 @@ class ExchangeServiceProvider extends ServiceProvider
 
     private function registerMappingDriver()
     {
-        $this->app->singleton(\Metadata\Driver\AdvancedDriverInterface::class, MappingDriver::class);
+        $this->app->singleton(\Metadata\Driver\AdvancedDriverInterface::class, Mapping\Driver::class);
     }
 }

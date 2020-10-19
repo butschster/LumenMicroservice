@@ -24,7 +24,7 @@ class DefaultPayloadFactory implements PayloadFactory
     public function createRequest(?Payload $body = null): RequestPayload
     {
         $payload = new RequestPayload();
-        $payload->payload = $body;
+        $payload->payload = $body ?: new \Butschster\Exchanger\Payloads\Payload();
         $payload->headers = $this->createRequestHeaders();
 
         return $payload;
@@ -47,7 +47,7 @@ class DefaultPayloadFactory implements PayloadFactory
     {
         $response = new ResponsePayload();
         $response->success = count($errors) == 0;
-        $response->headers = $headers;
+        $response->headers = $headers ?: $this->createResponseHeaders();
         $response->payload = $body;
         $response->errors = $errors;
 

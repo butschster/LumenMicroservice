@@ -4,7 +4,7 @@ namespace Butschster\Exchanger\Exchange\Point;
 
 use Illuminate\Support\Collection;
 use Butschster\Exchanger\Contracts\Exchange\Route;
-use Butschster\Exchanger\Exceptions\MethodNotFoundException;
+use Butschster\Exchanger\Exceptions\RouteNotFoundException;
 
 /**
  * @internal
@@ -28,7 +28,7 @@ class Information
     }
 
     /**
-     * Get exchange point subjects
+     * Get exchange point subject names
      * @return array
      */
     public function getRouteSubjects(): array
@@ -50,7 +50,7 @@ class Information
         });
 
         if (!$route) {
-            throw new MethodNotFoundException($subject);
+            throw new RouteNotFoundException($subject);
         }
 
         return $route;

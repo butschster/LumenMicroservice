@@ -27,9 +27,9 @@ interface Message
 
     /**
      * Reply to received message
-     * @param Payload $message
+     * @param Payload $payload
      * @param array $errors
      * @param Response\Headers|null $headers
      */
-    public function reply(Payload $message, array $errors = [], ?Response\Headers $headers = null): void;
+    public function reply(Payload $payload, array $errors = [], ?Response\Headers $headers = null): void;
 }

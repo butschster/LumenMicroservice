@@ -3,15 +3,12 @@
 namespace Butschster\Exchanger\Amqp;
 
 use Illuminate\Contracts\Container\Container;
-use PhpAmqpLib\Message\AMQPMessage;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use Butschster\Exchanger\Contracts\Amqp;
 use Butschster\Exchanger\Contracts\Exchange\Client as ClientContract;
-use Butschster\Exchanger\Contracts\Exchange\PayloadFactory;
 use Butschster\Exchanger\Contracts\Exchange\Point;
-use Butschster\Exchanger\Contracts\Serializer;
 use Butschster\Exchanger\Exchange\Point\Parser;
 use Butschster\Exchanger\Exchange\Request\Dispatcher;
 
@@ -44,7 +41,7 @@ class Client implements ClientContract
 
     public function subscribe(Point $exchange, callable $handler): void
     {
-        $pointInfo = (new Parser())->parse($exchange);
+        $pointInfo = $this->container->make(Parser::class)->parse($exchange);
 
         $properties = $this->properties + [
                 'routing' => $pointInfo->getRouteSubjects(),
@@ -56,10 +53,10 @@ class Client implements ClientContract
         $this->consumer->consume(
             $properties,
             $exchange->getName(),
-            function (AMQPMessage $response, Amqp\Consumer $consumer) use ($pointInfo) {
+            function (Amqp\Message $response) use ($pointInfo) {
                 $this->dispatcher->dispatch(
-                    $this->makeMessage($consumer, $response),
-                    $pointInfo->getRoute($response->getRoutingKey())
+                    $response,
+                    $pointInfo->getRoute($response->getSubject())
                 );
             });
     }
@@ -70,7 +67,8 @@ class Client implements ClientContract
 
         $this->requester->request(
             $this->properties,
-            $subject, $payload,
+            $subject,
+            $payload,
             function ($payload) use (&$response) {
                 $response = $payload->body;
             }
@@ -97,7 +95,7 @@ class Client implements ClientContract
         return $deferred->promise();
     }
 
-    public function call(string $subject, string $payload): void
+    public function broadcast(string $subject, string $payload): void
     {
         $this->publisher->publish(
             $this->properties,
@@ -109,19 +107,5 @@ class Client implements ClientContract
     public function setProperty(string $property, $value): void
     {
         $this->properties[$property] = $value;
-    }
-
-    public function makeMessage(Amqp\Consumer $consumer, AMQPMessage $response): Message
-    {
-        return new Message(
-            $this->container->make(PayloadFactory::class),
-            $this->container->make(Serializer::class),
-            $consumer,
-            $response->body,
-            $response->getRoutingKey(),
-            $response->has('correlation_id') ? $response->get('correlation_id') : null,
-            $response->has('reply_to') ? $response->get('reply_to') : null,
-            $response
-        );
     }
 }

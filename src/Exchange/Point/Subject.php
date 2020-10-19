@@ -28,17 +28,12 @@ class Subject implements Route
     /** Disabled Middleware */
     protected array $disabledMiddleware = [];
 
-    /** Global Middleware */
-    protected static array $defaultMiddleware = [
-        //
-    ];
-
     public function __construct(
         Exchange\Point $exchange,
         string $name,
         string $subject,
-        array $middleware,
         Collection $parameters,
+        array $middleware,
         array $disabledMiddleware = []
     )
     {
@@ -51,6 +46,15 @@ class Subject implements Route
     }
 
     /**
+     * Get class method name
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
      * Get subject name
      * @return string
      */
@@ -59,43 +63,44 @@ class Subject implements Route
         return $this->subject;
     }
 
-    public static function getDefaultMiddleware(): array
-    {
-        return self::$defaultMiddleware;
-    }
-
-    public function getMiddleware(): array
-    {
-        return array_diff(
-            array_merge(self::getDefaultMiddleware(), $this->middleware),
-            $this->getDisabledMiddleware()
-        );
-    }
-
-    public function getDisabledMiddleware(): array
-    {
-        return $this->disabledMiddleware;
-    }
-
-    public function getExchange(): Exchange\Point
-    {
-        return $this->exchange;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
+    /**
+     * Get class method arguments
+     * @return Collection
+     */
     public function getArguments(): Collection
     {
         return $this->arguments;
     }
 
+    /**
+     * Get all available middleware excluding disabled middleware
+     * @return array
+     */
+    public function getMiddleware(): array
+    {
+        return array_diff(
+            $this->middleware,
+            $this->getDisabledMiddleware()
+        );
+    }
+
+    /**
+     * Get middleware that should be ignored for this route
+     * @return array
+     */
+    public function getDisabledMiddleware(): array
+    {
+        return $this->disabledMiddleware;
+    }
+
+    /**
+     * Call class method
+     * @param array $dependencies
+     */
     public function call(array $dependencies): void
     {
         call_user_func_array(
-            [$this->getExchange(), $this->getName(),],
+            [$this->exchange, $this->getName()],
             $dependencies
         );
     }

@@ -31,7 +31,7 @@ class IncomingRequest implements IncomingRequestContract
         $this->message = $message;
         $this->container = $container;
         $this->requestHeaders = $requestHeaders;
-        $this->responseHeaders = $this->buildResponseHeaders();
+        $this->responseHeaders = $factory->createResponseHeaders();
     }
 
     /** @inheritDoc */
@@ -61,9 +61,9 @@ class IncomingRequest implements IncomingRequestContract
     }
 
     /** @inheritDoc */
-    public function reply(Payload $message, array $errors = [], ?ResponseHeaders $headers = null): void
+    public function reply(Payload $payload, array $errors = [], ?ResponseHeaders $headers = null): void
     {
-        $this->message->reply($message, $errors, $headers);
+        $this->message->reply($payload, $errors, $headers);
     }
 
     /** @inheritDoc */
@@ -82,17 +82,12 @@ class IncomingRequest implements IncomingRequestContract
     /** @inheritDoc */
     public function getPayload()
     {
-        $this->message->getPayload();
+        return $this->message->getPayload();
     }
 
     /** @inheritDoc */
     public function getRequestHeaders(): ?RequestHeaders
     {
         return $this->requestHeaders;
-    }
-
-    private function buildResponseHeaders(): ?ResponseHeaders
-    {
-        return $this->factory->createResponseHeaders();
     }
 }

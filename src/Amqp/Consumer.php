@@ -2,7 +2,10 @@
 
 namespace Butschster\Exchanger\Amqp;
 
+use Butschster\Exchanger\Contracts\Exchange\PayloadFactory;
+use Butschster\Exchanger\Contracts\Serializer;
 use Closure;
+use Illuminate\Contracts\Container\Container;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Throwable;
@@ -17,11 +20,13 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
     private ConnectorContract $connector;
     private Config $config;
     private int $messageCount = 0;
+    private Container $container;
 
-    public function __construct(Config $config, ConnectorContract $connector)
+    public function __construct(Config $config, Container $container, ConnectorContract $connector)
     {
         $this->connector = $connector;
         $this->config = $config;
+        $this->container = $container;
     }
 
     public function consume(array $properties, string $queue, Closure $closure): bool
@@ -54,7 +59,7 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
         $message->getChannel()->basic_reject($message->getDeliveryTag(), $requeue);
     }
 
-    private function process(string $queue, Closure $closure): bool
+    private function process(string $queue, Closure $callback): bool
     {
         try {
             $this->messageCount = $this->getQueueMessageCount();
@@ -63,7 +68,6 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
                 throw new Stop();
             }
 
-            $object = $this;
             $this->connector->getChannel()->basic_qos(null, 1, null);
             $this->connector->getChannel()->basic_consume(
                 $queue,
@@ -72,8 +76,8 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
                 $this->config->getProperty('consumer_no_ack'),
                 $this->config->getProperty('consumer_exclusive'),
                 $this->config->getProperty('consumer_nowait'),
-                function ($message) use ($closure, $object) {
-                    $closure($message, $object);
+                function ($message) use ($callback) {
+                    $callback($this->makeMessage($message));
                 }
             );
 
@@ -107,5 +111,19 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
         }
 
         return 0;
+    }
+
+    private function makeMessage(AMQPMessage $response): Message
+    {
+        return new Message(
+            $this->container->make(PayloadFactory::class),
+            $this->container->make(Serializer::class),
+            $this,
+            $response->body,
+            $response->getRoutingKey(),
+            $response->has('correlation_id') ? $response->get('correlation_id') : null,
+            $response->has('reply_to') ? $response->get('reply_to') : null,
+            $response
+        );
     }
 }

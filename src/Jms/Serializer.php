@@ -9,16 +9,16 @@ use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerBuilder;
 use Butschster\Exchanger\Contracts\Exchange\Payload;
 use Butschster\Exchanger\Contracts\Serializer as SerializerContract;
-use Butschster\Exchanger\Exchange\Config;
+use Butschster\Exchanger\Contracts\Exchange\Config as ExchangeConfig;
 use Butschster\Exchanger\Jms\Handlers\CarbonHandler;
 use Butschster\Exchanger\Jms\Handlers\MappingHandler;
 
 class Serializer implements SerializerContract
 {
     private SerializerBuilder $builder;
-    private Config $config;
+    private ExchangeConfig $config;
 
-    public function __construct(Config $config, SerializerBuilder $builder)
+    public function __construct(ExchangeConfig $config, SerializerBuilder $builder)
     {
         $this->builder = $builder;
         $this->config = $config;
@@ -65,11 +65,8 @@ class Serializer implements SerializerContract
      */
     private function createContext(string $context): Context
     {
-        $context = new $context();
-
-        $context->setVersion($this->config->version());
-
-        return $context;
+        return (new $context())
+            ->setVersion($this->config->version());
     }
 
     /**

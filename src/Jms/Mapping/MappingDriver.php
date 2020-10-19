@@ -1,16 +1,16 @@
 <?php
 
-namespace Butschster\Exchanger\Jms;
+namespace Butschster\Exchanger\Jms\Mapping;
 
 use Metadata\ClassMetadata;
 use Metadata\Driver\AdvancedDriverInterface;
 use ReflectionClass;
 
-class MappingDriver implements AdvancedDriverInterface
+class Driver implements AdvancedDriverInterface
 {
-    private MappingConfig $config;
+    private Config $config;
 
-    public function __construct(MappingConfig $config)
+    public function __construct(Config $config)
     {
         $this->config = $config;
     }

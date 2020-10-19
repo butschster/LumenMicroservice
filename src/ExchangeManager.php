@@ -6,7 +6,6 @@ use Illuminate\Contracts\Container\Container;
 use Psr\Log\LoggerInterface;
 use Butschster\Exchanger\Contracts\Exchange;
 use Butschster\Exchanger\Contracts\Serializer;
-use Butschster\Exchanger\Exchange\Config;
 use Butschster\Exchanger\Exchange\Point\Information;
 use Butschster\Exchanger\Exchange\Request;
 use Butschster\Exchanger\Payloads\Payload;
@@ -22,7 +21,7 @@ class ExchangeManager implements Contracts\ExchangeManager
 
     public function __construct(
         Container $container,
-        Config $config,
+        Exchange\Config $config,
         Exchange\Client $client,
         Serializer $serializer,
         LoggerInterface $logger
@@ -74,14 +73,14 @@ class ExchangeManager implements Contracts\ExchangeManager
             $this->serializer,
             $this->client,
             $subject,
-            $payload ?: new Payload()
+            $payload
         );
     }
 
     /** @inheritDoc */
     public function broadcast(string $subject, ?Exchange\Payload $payload = null): void
     {
-        $this->request($subject, $payload)->call();
+        $this->request($subject, $payload)->broadcast();
     }
 
     /**
@@ -95,5 +94,14 @@ class ExchangeManager implements Contracts\ExchangeManager
         $this->container->bind(LoggerInterface::class, function () {
             return $this->logger;
         });
+    }
+
+    /**
+     * Get logger object
+     * @return LoggerInterface
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
     }
 }

@@ -4,13 +4,13 @@ namespace Butschster\Exchanger\Exceptions;
 
 use RuntimeException;
 
-class MethodNotFoundException extends RuntimeException
+class RouteNotFoundException extends RuntimeException
 {
     /**
      * @param string $subject
      */
     public function __construct(string $subject)
     {
-        parent::__construct(sprintf('Method with subject was not found: %s', $subject));
+        parent::__construct(sprintf('Route with subject [%s] is not found.', $subject));
     }
 }

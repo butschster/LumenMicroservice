@@ -2,10 +2,11 @@
 
 namespace Butschster\Exchanger\Payloads\Request;
 
+use Butschster\Exchanger\Contracts\Exchange\Payload;
 use DateTimeInterface;
 use JMS\Serializer\Annotation as JMS;
 
-class Headers
+class Headers implements Payload
 {
     /** @JMS\Type("string") */
     public ?string $ip = null;
