@@ -25,13 +25,13 @@ class PublisherTest extends TestCase
         $channel->shouldReceive('basic_publish')->once()->withArgs(function (AMQPMessage $message, $exchange, $route) {
             return $message->getBody() === '{foo:bar}'
                 && $message->get_properties() === [
-                    'content_type' => 'text/json',
-                    'delivery_mode' => 2,
+                    'content_type' => 'application/json',
+                    'delivery_mode' => 5,
                 ]
                 && $route === 'com.test'
                 && $exchange === 'exchange.test';
         });
 
-        $publisher->publish($properties, 'com.test', '{foo:bar}');
+        $publisher->publish($properties, 'com.test', '{foo:bar}', 5);
     }
 }

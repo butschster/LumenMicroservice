@@ -72,14 +72,14 @@ class MessageTest extends TestCase
         $this->consumer->shouldReceive('reply')->once()->withArgs(function (AMQPMessage $reply, $replyTo) use ($body) {
             return $reply->getBody() === $body
                 && $reply->get_properties() === [
-                    'content_type' => 'text/json',
-                    'delivery_mode' => 2,
+                    'content_type' => 'application/json',
+                    'delivery_mode' => 5,
                     'correlation_id' => 'cor_id',
                 ]
                 && $replyTo === 'com.reply_to';
         });
 
-        $this->makeMessage()->reply($payload, $errors, $headers);
+        $this->makeMessage()->reply($payload, $errors, $headers, 5);
     }
 
     function test_replies_to_with_original_message()
@@ -97,7 +97,7 @@ class MessageTest extends TestCase
         $this->consumer->shouldReceive('reply')->once()->withArgs(function (AMQPMessage $reply, $replyTo) use ($body) {
             return $reply->getBody() === $body
                 && $reply->get_properties() === [
-                    'content_type' => 'text/json',
+                    'content_type' => 'application/json',
                     'delivery_mode' => 2,
                     'correlation_id' => 'cor_id',
                 ]

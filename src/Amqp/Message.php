@@ -67,7 +67,7 @@ class Message implements MessageContract
         return $body;
     }
 
-    public function reply(PayloadContract $payload, array $errors = [], ?Response\Headers $headers = null): void
+    public function reply(PayloadContract $payload, array $errors = [], ?Response\Headers $headers = null, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void
     {
         $responseMessage = $this->serializer->serialize(
             $this->factory->createResponse($payload, $errors, $headers),
@@ -75,8 +75,8 @@ class Message implements MessageContract
         );
 
         $reply = new AMQPMessage($responseMessage, [
-            'content_type'   => 'text/json',
-            'delivery_mode'  => 2,
+            'content_type' => 'application/json',
+            'delivery_mode' => $deliveryMode,
             'correlation_id' => $this->correlationId,
         ]);
 

@@ -68,6 +68,11 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
                 throw new Stop();
             }
 
+            // For proper round-robin message distribution with more than one consumer, set the prefetch count to 1.
+            // At the price of more overhead in message transfer, messages are evenly distributed over all consumers,
+            // requeueing is almost instantly after a consumer fails, and the memory load for both the consumers and
+            // RabbitMQ is as small as possible. This is a good approach for message based microservice architectures.
+            // Scaling to higher message volumes while preserving quality of service can then be done by adding more consumers.
             $this->connector->getChannel()->basic_qos(null, 1, null);
             $this->connector->getChannel()->basic_consume(
                 $queue,
