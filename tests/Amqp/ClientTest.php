@@ -71,16 +71,17 @@ class ClientTest extends TestCase
 
     function test_request()
     {
-        $this->requester->shouldReceive('request')->once()->withArgs(function ($props, $subject, $payload, $callback) {
+        $this->requester->shouldReceive('request')->once()->withArgs(function ($props, $subject, $payload, $callback, $deliveryMode) {
 
             $callback(json_decode('{"body": "test"}'));
 
             return $props === []
                 && $subject === 'com.test'
-                && $payload === '{"foo":"bar"}';
+                && $payload === '{"foo":"bar"}'
+                && $deliveryMode === 5;
         });
 
-        $response = $this->makeClient()->request('com.test', '{"foo":"bar"}');
+        $response = $this->makeClient()->request('com.test', '{"foo":"bar"}', 5);
 
         $this->assertEquals('test', $response);
     }
@@ -97,9 +98,9 @@ class ClientTest extends TestCase
         });
 
         $this->requester->shouldReceive('deferredRequest')
-            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}')->andReturn($promise);
+            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}', 5)->andReturn($promise);
 
-        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}');
+        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}', 5);
 
         $response->then(function ($body) {
             $this->assertEquals('test', $body);
@@ -118,9 +119,9 @@ class ClientTest extends TestCase
         });
 
         $this->requester->shouldReceive('deferredRequest')
-            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}')->andReturn($promise);
+            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}', 5)->andReturn($promise);
 
-        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}');
+        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}', 5);
 
         $response->then(function () {
             $this->fail('should not be executed');
@@ -131,8 +132,8 @@ class ClientTest extends TestCase
 
     function test_broadcast()
     {
-        $this->publisher->shouldReceive('publish')->once()->with([], 'com.test', '{"foo":"bar"}');
-        $this->makeClient()->broadcast('com.test', '{"foo":"bar"}');
+        $this->publisher->shouldReceive('publish')->once()->with([], 'com.test', '{"foo":"bar"}', 5);
+        $this->makeClient()->broadcast('com.test', '{"foo":"bar"}', 5);
     }
 
     protected function makeClient(): Client

@@ -3,6 +3,7 @@
 namespace Butschster\Exchanger\Amqp;
 
 use Illuminate\Contracts\Container\Container;
+use PhpAmqpLib\Message\AMQPMessage;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
@@ -61,7 +62,7 @@ class Client implements ClientContract
             });
     }
 
-    public function request(string $subject, string $payload): string
+    public function request(string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): string
     {
         $response = null;
 
@@ -71,13 +72,14 @@ class Client implements ClientContract
             $payload,
             function ($payload) use (&$response) {
                 $response = $payload->body;
-            }
+            },
+            $deliveryMode
         );
 
         return $response;
     }
 
-    public function deferredRequest(LoopInterface $loop, string $subject, string $payload): PromiseInterface
+    public function deferredRequest(LoopInterface $loop, string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): PromiseInterface
     {
         $deferred = new Deferred();
 
@@ -85,7 +87,8 @@ class Client implements ClientContract
             $this->properties,
             $loop,
             $subject,
-            $payload
+            $payload,
+            $deliveryMode
         )->then(function ($response) use ($deferred) {
             $deferred->resolve($response->body);
         }, function ($exception) use ($deferred) {
@@ -95,12 +98,13 @@ class Client implements ClientContract
         return $deferred->promise();
     }
 
-    public function broadcast(string $subject, string $payload): void
+    public function broadcast(string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void
     {
         $this->publisher->publish(
             $this->properties,
             $subject,
-            $payload
+            $payload,
+            $deliveryMode
         );
     }
 
