@@ -1,4 +1,6 @@
 # Lumen Microservice
+![heading](https://user-images.githubusercontent.com/773481/96422465-b6bbe800-1200-11eb-914a-8c2c150d80eb.jpg)
+
 This Package helps you to use Lumen framework as a microservice through AMQP without extra knowledge. 
 Just install package, create Exchange Point class and start exchanging information between services through RabbitMQ.
 
@@ -188,3 +190,6 @@ class UserController {
 
 }
 ```
+
+## Schema
+![schema](https://user-images.githubusercontent.com/773481/96422522-cfc49900-1200-11eb-8b15-45790d7b6a55.png)
