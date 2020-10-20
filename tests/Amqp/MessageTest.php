@@ -58,7 +58,10 @@ class MessageTest extends TestCase
         );
     }
 
-    function test_replies_to_without_original_message()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_replies_to_without_original_message(bool $persistent)
     {
         $response = new Response();
         $payload = new Payload();
@@ -69,20 +72,23 @@ class MessageTest extends TestCase
             ->once()->with($payload, $errors, $headers)->andReturn($response);
         $this->serializer->shouldReceive('serialize')
             ->once()->with($response, [Payload::class])->andReturn($body = '{foo:bar}');
-        $this->consumer->shouldReceive('reply')->once()->withArgs(function (AMQPMessage $reply, $replyTo) use ($body) {
+        $this->consumer->shouldReceive('reply')->once()->withArgs(function (AMQPMessage $reply, $replyTo) use ($body, $persistent) {
             return $reply->getBody() === $body
                 && $reply->get_properties() === [
                     'content_type' => 'application/json',
-                    'delivery_mode' => 5,
+                    'delivery_mode' => $persistent ? AMQPMessage::DELIVERY_MODE_PERSISTENT : AMQPMessage::DELIVERY_MODE_NON_PERSISTENT,
                     'correlation_id' => 'cor_id',
                 ]
                 && $replyTo === 'com.reply_to';
         });
 
-        $this->makeMessage()->reply($payload, $errors, $headers, 5);
+        $this->makeMessage()->reply($payload, $errors, $headers, $persistent);
     }
 
-    function test_replies_to_with_original_message()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_replies_to_with_original_message(bool $persistent)
     {
         $original = $this->mock(AMQPMessage::class);
         $response = new Response();
@@ -94,11 +100,11 @@ class MessageTest extends TestCase
             ->once()->with($payload, $errors, $headers)->andReturn($response);
         $this->serializer->shouldReceive('serialize')
             ->once()->with($response, [Payload::class])->andReturn($body = '{foo:bar}');
-        $this->consumer->shouldReceive('reply')->once()->withArgs(function (AMQPMessage $reply, $replyTo) use ($body) {
+        $this->consumer->shouldReceive('reply')->once()->withArgs(function (AMQPMessage $reply, $replyTo) use ($body, $persistent) {
             return $reply->getBody() === $body
                 && $reply->get_properties() === [
                     'content_type' => 'application/json',
-                    'delivery_mode' => 2,
+                    'delivery_mode' => $persistent ? AMQPMessage::DELIVERY_MODE_PERSISTENT : AMQPMessage::DELIVERY_MODE_NON_PERSISTENT,
                     'correlation_id' => 'cor_id',
                 ]
                 && $replyTo === 'com.reply_to';
@@ -120,5 +126,12 @@ class MessageTest extends TestCase
             'com.reply_to',
             $originalMessage
         );
+    }
+
+    public function persistenceDataProvider()
+    {
+        return [
+            [true, false]
+        ];
     }
 }

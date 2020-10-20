@@ -32,7 +32,7 @@ class Requester implements RequesterContract
         });
     }
 
-    public function request(array $properties, string $route, string $message, callable $callback, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void
+    public function request(array $properties, string $route, string $message, callable $callback, bool $persistent = true): void
     {
         $properties['routing'] = $route;
         $properties['nobinding'] = true;
@@ -41,22 +41,17 @@ class Requester implements RequesterContract
 
         $correlationId = uniqid();
 
-        $message = new AMQPMessage($message, [
-            'content_type' => 'application/json',
-            'delivery_mode' => $deliveryMode,
-            'correlation_id' => $correlationId,
-            'reply_to' => $this->getQueueInfo(),
-            'expiration' => '30000',
-        ]);
-
         $this->consume($correlationId, $callback);
-        $this->publish($route, $message);
+        $this->publish(
+            $route,
+            $this->makeMessage($message, $persistent, $correlationId)
+        );
         $this->waitConsume();
 
         $this->connector->disconnect();
     }
 
-    public function deferredRequest(array $properties, LoopInterface $loop, string $route, string $message, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): PromiseInterface
+    public function deferredRequest(array $properties, LoopInterface $loop, string $route, string $message, bool $persistent = true): PromiseInterface
     {
         $properties['routing'] = $route;
         $properties['nobinding'] = true;
@@ -65,15 +60,10 @@ class Requester implements RequesterContract
 
         $correlationId = uniqid();
 
-        $message = new AMQPMessage($message, [
-            'content_type' => 'application/json',
-            'delivery_mode' => $deliveryMode,
-            'correlation_id' => $correlationId,
-            'reply_to' => $this->getQueueInfo(),
-            'expiration' => '30000',
-        ]);
-
-        $this->publish($route, $message);
+        $this->publish(
+            $route,
+            $this->makeMessage($message, $persistent, $correlationId)
+        );
         $deferred = new Deferred();
 
         $loop->futureTick(
@@ -144,5 +134,23 @@ class Requester implements RequesterContract
     private function getQueueInfo(): ?string
     {
         return $this->queueInfo[0] ?? null;
+    }
+
+    /**
+     * @param string $message
+     * @param bool $persistent
+     * @param string $correlationId
+     * @return AMQPMessage
+     */
+    private function makeMessage(string $message, bool $persistent, string $correlationId): AMQPMessage
+    {
+        $message = new AMQPMessage($message, [
+            'content_type' => 'application/json',
+            'delivery_mode' => $persistent ? AMQPMessage::DELIVERY_MODE_PERSISTENT : AMQPMessage::DELIVERY_MODE_NON_PERSISTENT,
+            'correlation_id' => $correlationId,
+            'reply_to' => $this->getQueueInfo(),
+            'expiration' => '30000',
+        ]);
+        return $message;
     }
 }

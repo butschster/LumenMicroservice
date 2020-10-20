@@ -9,7 +9,10 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class PublisherTest extends TestCase
 {
-    function test_publish()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_publish(bool $persistent)
     {
         $publisher = new Publisher(
             $connector = $this->mockAmqpConnector()
@@ -22,16 +25,23 @@ class PublisherTest extends TestCase
         $connector->shouldReceive('disconnect')->once();
 
         $connector->shouldReceive('getChannel')->once()->andReturn($channel = $this->mock(AMQPChannel::class));
-        $channel->shouldReceive('basic_publish')->once()->withArgs(function (AMQPMessage $message, $exchange, $route) {
+        $channel->shouldReceive('basic_publish')->once()->withArgs(function (AMQPMessage $message, $exchange, $route) use($persistent) {
             return $message->getBody() === '{foo:bar}'
                 && $message->get_properties() === [
                     'content_type' => 'application/json',
-                    'delivery_mode' => 5,
+                    'delivery_mode' => $persistent ? AMQPMessage::DELIVERY_MODE_PERSISTENT : AMQPMessage::DELIVERY_MODE_NON_PERSISTENT,
                 ]
                 && $route === 'com.test'
                 && $exchange === 'exchange.test';
         });
 
-        $publisher->publish($properties, 'com.test', '{foo:bar}', 5);
+        $publisher->publish($properties, 'com.test', '{foo:bar}', $persistent);
+    }
+
+    public function persistenceDataProvider()
+    {
+        return [
+            [true, false]
+        ];
     }
 }

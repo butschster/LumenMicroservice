@@ -69,24 +69,30 @@ class ClientTest extends TestCase
         });
     }
 
-    function test_request()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_request(bool $persistent)
     {
-        $this->requester->shouldReceive('request')->once()->withArgs(function ($props, $subject, $payload, $callback, $deliveryMode) {
+        $this->requester->shouldReceive('request')->once()->withArgs(function ($props, $subject, $payload, $callback, $p) use($persistent) {
 
             $callback(json_decode('{"body": "test"}'));
 
             return $props === []
                 && $subject === 'com.test'
                 && $payload === '{"foo":"bar"}'
-                && $deliveryMode === 5;
+                && $p === $persistent;
         });
 
-        $response = $this->makeClient()->request('com.test', '{"foo":"bar"}', 5);
+        $response = $this->makeClient()->request('com.test', '{"foo":"bar"}', $persistent);
 
         $this->assertEquals('test', $response);
     }
 
-    function test_deferred_request_resolved()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_deferred_request_resolved(bool $persistent)
     {
         $loop = $this->mock(LoopInterface::class);
 
@@ -98,16 +104,19 @@ class ClientTest extends TestCase
         });
 
         $this->requester->shouldReceive('deferredRequest')
-            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}', 5)->andReturn($promise);
+            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}', $persistent)->andReturn($promise);
 
-        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}', 5);
+        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}', $persistent);
 
         $response->then(function ($body) {
             $this->assertEquals('test', $body);
         });
     }
 
-    function test_deferred_request_reject()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_deferred_request_reject(bool $persistent)
     {
         $loop = $this->mock(LoopInterface::class);
 
@@ -119,9 +128,9 @@ class ClientTest extends TestCase
         });
 
         $this->requester->shouldReceive('deferredRequest')
-            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}', 5)->andReturn($promise);
+            ->once()->with([], $loop, 'com.test', '{"foo":"bar"}', $persistent)->andReturn($promise);
 
-        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}', 5);
+        $response = $this->makeClient()->deferredRequest($loop, 'com.test', '{"foo":"bar"}', $persistent);
 
         $response->then(function () {
             $this->fail('should not be executed');
@@ -130,10 +139,13 @@ class ClientTest extends TestCase
         });
     }
 
-    function test_broadcast()
+    /**
+     * @dataProvider persistenceDataProvider
+     */
+    function test_broadcast(bool $persistent)
     {
-        $this->publisher->shouldReceive('publish')->once()->with([], 'com.test', '{"foo":"bar"}', 5);
-        $this->makeClient()->broadcast('com.test', '{"foo":"bar"}', 5);
+        $this->publisher->shouldReceive('publish')->once()->with([], 'com.test', '{"foo":"bar"}', $persistent);
+        $this->makeClient()->broadcast('com.test', '{"foo":"bar"}', $persistent);
     }
 
     protected function makeClient(): Client
@@ -145,5 +157,12 @@ class ClientTest extends TestCase
             $this->requester,
             $this->dispatcher
         );
+    }
+
+    public function persistenceDataProvider()
+    {
+        return [
+            [true, false]
+        ];
     }
 }
