@@ -55,6 +55,14 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @return m\MockInterface|Exchange\Request
+     */
+    protected function mockExchangeRequestTokenDecoder(): m\MockInterface
+    {
+        return $this->mock(Exchange\Request\TokenDecoder::class);
+    }
+
+    /**
      * @return m\MockInterface|Exchange\Point
      */
     protected function mockExchangePoint(): m\MockInterface

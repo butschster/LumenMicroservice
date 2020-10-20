@@ -3,6 +3,8 @@
 namespace Butschster\Tests\Exchange\Request;
 
 use Butschster\Exchanger\Contracts\Exchange\IncomingRequest;
+use Butschster\Exchanger\Contracts\Exchange\Request\Token;
+use Butschster\Exchanger\Contracts\Exchange\Request\TokenDecoder;
 use Butschster\Exchanger\Exceptions\Handler;
 use Butschster\Exchanger\Exchange\Request\Dispatcher;
 use Butschster\Exchanger\Payloads\Request\Headers;
@@ -33,31 +35,25 @@ class DispatcherTest extends TestCase
     function test_dispatch()
     {
         $payload = json_decode('{"hello":"world","headers":{"ip":"127.0.0.1"}}');
+        $headers = new Headers();
 
-        $message = $this->mockAmqpMessage();
-        $message->shouldReceive('getPayload')
-            ->once()->andReturn($payload);
+        $this->assertDispatcherData($payload, $headers);
+    }
 
-        $this->serializer->shouldReceive('deserialize')
-            ->once()->with($payload->headers, Headers::class)
-            ->andReturn($headers = new Headers());
+    function test_if_request_contains_token_in_header_it_should_be_decoded()
+    {
+        $payload = json_decode('{"hello":"world","headers":{"ip":"127.0.0.1","token":"test-token"}}');
+
+        $headers = new Headers();
+        $headers->token = 'test-token';
 
         $this->container->shouldReceive('make')
-            ->once()->with(
-                IncomingRequest::class,
-                [
-                    'message' => $message,
-                    'headers' => $headers
-                ]
-            )->andReturn($request = $this->mockExchangeIncomingRequest());
+            ->once()->with(TokenDecoder::class)->andReturn($decoder = $this->mockExchangeRequestTokenDecoder());
 
-        $route = $this->mockExchangeRoute();
+        $decoder->shouldReceive('decode')
+            ->once()->with('test-token')->andReturn($this->mock(Token::class));
 
-        $route->shouldReceive('getArguments')->once()->andReturn(new Collection());
-        $route->shouldReceive('getMiddleware')->once()->andReturn([]);
-        $route->shouldReceive('call')->once()->with([]);
-
-        $this->makeDispatcher()->dispatch($message, $route);
+        $this->assertDispatcherData($payload, $headers);
     }
 
     function test_dispatch_should_handle_exception_if_it_will_throw()
@@ -102,5 +98,32 @@ class DispatcherTest extends TestCase
             $this->serializer,
             $this->pipeline
         );
+    }
+
+    private function assertDispatcherData($payload, Headers $headers): void
+    {
+        $route = $this->mockExchangeRoute();
+        $route->shouldReceive('getArguments')->once()->andReturn(new Collection());
+        $route->shouldReceive('getMiddleware')->once()->andReturn([]);
+        $route->shouldReceive('call')->once()->with([]);
+
+        $message = $this->mockAmqpMessage();
+        $message->shouldReceive('getPayload')
+            ->once()->andReturn($payload);
+
+        $this->serializer->shouldReceive('deserialize')
+            ->once()->with($payload->headers, Headers::class)
+            ->andReturn($headers);
+
+        $this->container->shouldReceive('make')
+            ->once()->with(
+                IncomingRequest::class,
+                [
+                    'message' => $message,
+                    'headers' => $headers
+                ]
+            )->andReturn($request = $this->mockExchangeIncomingRequest());
+
+        $this->makeDispatcher()->dispatch($message, $route);
     }
 }
