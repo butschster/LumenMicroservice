@@ -1,6 +1,9 @@
 {
     "name": "butschster/lumen-microservice",
-    "description": "Package that helps you to use Lumen framework as a microservice through AMQP",
+    "description": "This Package will help you to use Lumen framework as a microservice with AMQP and JMS Serializer without extra knowledge.",
+    "keywords": [
+        "microservice", "lumen", "amqp", "lumen-framework", "rabbitmq", "jms-serializer", "event-loop"
+    ],
     "license": "MIT",
     "authors": [
         {
