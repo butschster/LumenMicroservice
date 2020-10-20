@@ -2,7 +2,10 @@
 
 namespace Butschster\Exchanger\Exchange\Request;
 
+use Butschster\Exchanger\Contracts\Exchange\Request\TokenDecoder;
+use Butschster\Exchanger\Exceptions\InvalidTokenException;
 use Closure;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
@@ -41,7 +44,7 @@ class Dispatcher
      * Route received message to exchange point subject
      * @param Message $message
      * @param Route $route
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws BindingResolutionException
      */
     public function dispatch(Message $message, Route $route): void
     {
@@ -121,7 +124,7 @@ class Dispatcher
      * @param IncomingRequest $request
      * @param Throwable $e
      * @return void
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws BindingResolutionException
      */
     private function handleException(IncomingRequest $request, Throwable $e): void
     {
@@ -133,24 +136,39 @@ class Dispatcher
      * Incomming request factory
      * @param Message $message
      * @return IncomingRequest
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @throws BindingResolutionException
      */
     private function makeIncomingRequest(Message $message): IncomingRequest
     {
-        $body = $message->getPayload();
+        return $this->container->make(IncomingRequest::class, [
+            'message' => $message,
+            'headers' => $this->parseHeaders($message->getPayload())
+        ]);
+    }
 
+    /**
+     * @param object $body
+     * @return \Butschster\Exchanger\Contracts\Exchange\Payload|RequestHeaders|null
+     * @throws BindingResolutionException
+     * @throws InvalidTokenException
+     */
+    private function parseHeaders(object $body): ?RequestHeaders
+    {
         /** @var RequestHeaders|null $headers */
         $headers = null;
+
         if (isset($body->headers)) {
             $headers = $this->serializer->deserialize(
                 $body->headers,
                 RequestHeaders::class
             );
+
+            if (!empty($headers->token)) {
+                $headers->tokenInfo = $this->container->make(TokenDecoder::class)
+                    ->decode($headers->token);
+            }
         }
 
-        return $this->container->make(IncomingRequest::class, [
-            'message' => $message,
-            'headers' => $headers
-        ]);
+        return $headers;
     }
 }

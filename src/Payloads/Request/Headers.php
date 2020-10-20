@@ -3,6 +3,7 @@
 namespace Butschster\Exchanger\Payloads\Request;
 
 use Butschster\Exchanger\Contracts\Exchange\Payload;
+use Butschster\Exchanger\Contracts\Exchange\Request\Token;
 use DateTimeInterface;
 use JMS\Serializer\Annotation as JMS;
 
@@ -25,4 +26,9 @@ class Headers implements Payload
 
     /** @JMS\Type("Butschster\Exchanger\Payloads\Request\Meta") */
     public Meta $meta;
+
+    /** @JMS\Type("string") */
+    public ?string $token = null;
+
+    public ?Token $tokenInfo = null;
 }

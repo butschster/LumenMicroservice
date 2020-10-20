@@ -3,7 +3,9 @@
 namespace Butschster\Exchanger\Providers;
 
 use Butschster\Exchanger\Exchange\Config as ExchangeConfig;
+use Butschster\Exchanger\Exchange\Request\JWTTokenDecoder;
 use Butschster\Exchanger\Jms\Mapping;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\ServiceProvider;
 use PhpAmqpLib\Connection\AMQPSSLConnection;
 use Butschster\Exchanger\Amqp\Config;
@@ -32,6 +34,7 @@ class ExchangeServiceProvider extends ServiceProvider
         $this->registerExchangeManager();
         $this->registerPayloadFactory();
         $this->registerMappingDriver();
+        $this->registerTokenDecoder();
     }
 
     private function registerExchangeManager()
@@ -78,5 +81,14 @@ class ExchangeServiceProvider extends ServiceProvider
     private function registerMappingDriver()
     {
         $this->app->singleton(\Metadata\Driver\AdvancedDriverInterface::class, Mapping\Driver::class);
+    }
+
+    private function registerTokenDecoder()
+    {
+        $this->app->singleton(Exchange\Request\TokenDecoder::class, function () {
+            $config = $this->app[Repository::class]->get('microservice.jwt');
+
+            return new JWTTokenDecoder($config['secret'], $config['algo']);
+        });
     }
 }
