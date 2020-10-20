@@ -20,28 +20,28 @@ interface Client
      * Send request with response
      * @param string $subject
      * @param string $payload
-     * @param int $deliveryMode
+     * @param bool $persistent
      * @return string
      */
-    public function request(string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): string;
+    public function request(string $subject, string $payload, bool $persistent = true): string;
 
     /**
      * Send deferred request
      * @param LoopInterface $loop
      * @param string $subject
      * @param string $payload
-     * @param int $deliveryMode
+     * @param bool $persistent
      * @return PromiseInterface
      */
-    public function deferredRequest(LoopInterface $loop, string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): PromiseInterface;
+    public function deferredRequest(LoopInterface $loop, string $subject, string $payload, bool $persistent = true): PromiseInterface;
 
     /**
      * Broadcast a message
      * @param string $subject
      * @param string $payload
-     * @param int $deliveryMode
+     * @param bool $persistent
      */
-    public function broadcast(string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void;
+    public function broadcast(string $subject, string $payload, bool $persistent = true): void;
 
     /**
      * Set property to AMPQ connector

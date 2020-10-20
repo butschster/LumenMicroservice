@@ -11,7 +11,7 @@ interface Publisher
      * @param array $properties
      * @param string $route
      * @param string $message
-     * @param int $deliveryMode
+     * @param bool $persistent
      */
-    public function publish(array $properties, string $route, string $message, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void;
+    public function publish(array $properties, string $route, string $message, bool $persistent = true): void;
 }

@@ -2,7 +2,6 @@
 
 namespace Butschster\Exchanger\Contracts\Amqp;
 
-use PhpAmqpLib\Message\AMQPMessage;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
@@ -14,9 +13,9 @@ interface Requester
      * @param string $route
      * @param string $message
      * @param callable $callback
-     * @param int $deliveryMode
+     * @param bool $persistent
      */
-    public function request(array $properties, string $route, string $message, callable $callback, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void;
+    public function request(array $properties, string $route, string $message, callable $callback, bool $persistent = true): void;
 
     /**
      * Send a deferred request
@@ -24,8 +23,8 @@ interface Requester
      * @param LoopInterface $loop
      * @param string $route
      * @param string $message
-     * @param int $deliveryMode
+     * @param bool $persistent
      * @return PromiseInterface
      */
-    public function deferredRequest(array $properties, LoopInterface $loop, string $route, string $message, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): PromiseInterface;
+    public function deferredRequest(array $properties, LoopInterface $loop, string $route, string $message, bool $persistent = true): PromiseInterface;
 }
