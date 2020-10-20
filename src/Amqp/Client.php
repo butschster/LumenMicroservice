@@ -3,7 +3,6 @@
 namespace Butschster\Exchanger\Amqp;
 
 use Illuminate\Contracts\Container\Container;
-use PhpAmqpLib\Message\AMQPMessage;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
@@ -62,7 +61,7 @@ class Client implements ClientContract
             });
     }
 
-    public function request(string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): string
+    public function request(string $subject, string $payload, bool $persistent = true): string
     {
         $response = null;
 
@@ -73,13 +72,13 @@ class Client implements ClientContract
             function ($payload) use (&$response) {
                 $response = $payload->body;
             },
-            $deliveryMode
+            $persistent
         );
 
         return $response;
     }
 
-    public function deferredRequest(LoopInterface $loop, string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): PromiseInterface
+    public function deferredRequest(LoopInterface $loop, string $subject, string $payload, bool $persistent = true): PromiseInterface
     {
         $deferred = new Deferred();
 
@@ -88,7 +87,7 @@ class Client implements ClientContract
             $loop,
             $subject,
             $payload,
-            $deliveryMode
+            $persistent
         )->then(function ($response) use ($deferred) {
             $deferred->resolve($response->body);
         }, function ($exception) use ($deferred) {
@@ -98,13 +97,13 @@ class Client implements ClientContract
         return $deferred->promise();
     }
 
-    public function broadcast(string $subject, string $payload, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void
+    public function broadcast(string $subject, string $payload, bool $persistent = true): void
     {
         $this->publisher->publish(
             $this->properties,
             $subject,
             $payload,
-            $deliveryMode
+            $persistent
         );
     }
 

@@ -18,7 +18,7 @@ class Publisher implements PublisherContract
         $this->connector = $connector;
     }
 
-    public function publish(array $properties, string $route, string $message, int $deliveryMode = AMQPMessage::DELIVERY_MODE_PERSISTENT): void
+    public function publish(array $properties, string $route, string $message, bool $persistent = true): void
     {
         $properties['routing'] = $route;
         $properties['nobinding'] = true;
@@ -27,7 +27,7 @@ class Publisher implements PublisherContract
 
         $message = new AMQPMessage($message, [
             'content_type' => 'application/json',
-            'delivery_mode' => $deliveryMode,
+            'delivery_mode' => $persistent ? AMQPMessage::DELIVERY_MODE_PERSISTENT : AMQPMessage::DELIVERY_MODE_NON_PERSISTENT,
         ]);
 
         $this->connector->getChannel()->basic_publish(
