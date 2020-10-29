@@ -9,7 +9,6 @@ use Butschster\Exchanger\Contracts\Serializer;
 
 class CarbonHandler implements Serializer\Handler
 {
-
     /** @inheritDoc */
     public function serialize(Serializer $serializer, HandlerRegistryInterface $registry): void
     {

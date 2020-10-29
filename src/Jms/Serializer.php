@@ -2,34 +2,40 @@
 
 namespace Butschster\Exchanger\Jms;
 
+use JMS\Serializer\Builder\DriverFactoryInterface;
 use JMS\Serializer\Context;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Handler\HandlerRegistryInterface;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerBuilder;
-use Butschster\Exchanger\Contracts\Exchange\Payload;
 use Butschster\Exchanger\Contracts\Serializer as SerializerContract;
-use Butschster\Exchanger\Contracts\Exchange\Config as ExchangeConfig;
-use Butschster\Exchanger\Jms\Handlers\CarbonHandler;
 use Butschster\Exchanger\Jms\Handlers\MappingHandler;
 
 class Serializer implements SerializerContract
 {
     private SerializerBuilder $builder;
-    private ExchangeConfig $config;
+    private Config $config;
+    private ?string $version;
 
-    public function __construct(ExchangeConfig $config, SerializerBuilder $builder)
+    public function __construct(SerializerBuilder $builder, Config $config, ?string $version = null)
     {
         $this->builder = $builder;
         $this->config = $config;
+        $this->version = $version;
     }
 
     /** @inheritDoc */
-    public function serialize(Payload $object, array $mapping = []): string
+    public function serialize($object, array $mapping = [], ?DriverFactoryInterface $mappingDriver = null): string
     {
-        $this->configureSerializer($mapping);
+        $builder = clone $this->builder;
 
-        $result = $this->builder->build()
+        $this->registerSerializeHandlers($builder, $mapping);
+
+        if ($mappingDriver) {
+            $builder->setMetadataDriverFactory($mappingDriver);
+        }
+
+        $result = $builder->build()
             ->serialize($object, 'json', $this->createContext(SerializationContext::class));
 
         if (method_exists($result, 'afterSerialized')) {
@@ -40,15 +46,21 @@ class Serializer implements SerializerContract
     }
 
     /** @inheritDoc */
-    public function deserialize($data, string $class, array $mapping = []): Payload
+    public function deserialize($data, string $class, array $mapping = [], ?DriverFactoryInterface $mappingDriver = null)
     {
+        $builder = clone $this->builder;
+
         if (!is_string($data)) {
             $data = json_encode($data);
         }
 
-        $this->configureDeserializer($mapping);
+        $this->registerDeserializeHandlers($builder, $mapping);
 
-        $result = $this->builder->build()
+        if ($mappingDriver) {
+            $builder->setMetadataDriverFactory($mappingDriver);
+        }
+
+        $result = $builder->build()
             ->deserialize($data, $class, 'json', $this->createContext(DeserializationContext::class));
 
         if (method_exists($result, 'afterDeserialized')) {
@@ -65,31 +77,52 @@ class Serializer implements SerializerContract
      */
     private function createContext(string $context): Context
     {
-        return (new $context())
-            ->setVersion($this->config->version());
+        $context = new $context();
+        if ($this->version) {
+            $context->setVersion($this->version);
+        }
+
+        return $context;
     }
 
     /**
      * Register serializer handlers
+     * @param SerializerBuilder $builder
      * @param array $mapping
      */
-    private function configureSerializer(array $mapping): void
+    private function registerSerializeHandlers(SerializerBuilder $builder, array $mapping): void
     {
-        $this->builder->configureHandlers(function (HandlerRegistryInterface $registry) use ($mapping) {
+        $builder->configureHandlers(function (HandlerRegistryInterface $registry) use ($mapping) {
             (new MappingHandler($mapping))->serialize($this, $registry);
-            (new CarbonHandler())->serialize($this, $registry);
+            foreach ($this->getHandlers() as $handler) {
+                $handler->serialize($this, $registry);
+            }
         });
     }
 
     /**
      * Register deserializer handlers
+     * @param SerializerBuilder $builder
      * @param array $mapping
      */
-    private function configureDeserializer(array $mapping)
+    private function registerDeserializeHandlers(SerializerBuilder $builder, array $mapping)
     {
-        $this->builder->configureHandlers(function (HandlerRegistryInterface $registry) use ($mapping) {
+        $builder->configureHandlers(function (HandlerRegistryInterface $registry) use ($mapping) {
             (new MappingHandler($mapping))->deserialize($this, $registry);
-            (new CarbonHandler())->deserialize($this, $registry);
+
+            foreach ($this->getHandlers() as $handler) {
+                $handler->deserialize($this, $registry);
+            }
         });
+    }
+
+    /**
+     * @return array|SerializerContract\Handler[]
+     */
+    private function getHandlers(): array
+    {
+        return array_map(function (string $handler) {
+            return new $handler();
+        }, $this->config->getHandlers());
     }
 }

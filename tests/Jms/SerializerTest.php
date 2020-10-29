@@ -4,6 +4,7 @@ namespace Butschster\Tests\Jms;
 
 use Butschster\Exchanger\Jms\Serializer;
 use Butschster\Tests\TestCase;
+use JMS\Serializer\Builder\DriverFactoryInterface;
 use JMS\Serializer\SerializerBuilder;
 use JMS\Serializer\Annotation as JMS;
 
@@ -17,12 +18,12 @@ class SerializerTest extends TestCase
     {
         parent::setUp();
 
-        $this->config = $this->mockExchangeConfig();
+        $this->config = $this->mockSerializerConfig();
     }
 
     function test_serialize()
     {
-        $payload = new TestPayload();
+        $payload = new SerializerTestPayload();
         $payload->body = 'test';
 
         $json = $this->makeSerializer()->serialize($payload, []);
@@ -31,24 +32,25 @@ class SerializerTest extends TestCase
 
     function test_deserialize()
     {
-        $payload = $this->makeSerializer()->deserialize('{"body":"test"}', TestPayload::class, []);
+        $payload = $this->makeSerializer()->deserialize('{"body":"test"}', SerializerTestPayload::class, []);
 
-        $this->assertInstanceOf(TestPayload::class, $payload);
+        $this->assertInstanceOf(SerializerTestPayload::class, $payload);
         $this->assertEquals('test', $payload->body);
     }
 
     public function makeSerializer()
     {
-        $this->config->shouldReceive('version')->andReturn('1.0');
+        $this->config->shouldReceive('getHandlers')->andReturn([]);
 
         return new Serializer(
+            new SerializerBuilder(),
             $this->config,
-            new SerializerBuilder()
+            'v1.0.0'
         );
     }
 }
 
-class TestPayload implements \Butschster\Exchanger\Contracts\Exchange\Payload
+class SerializerTestPayload implements \Butschster\Exchanger\Contracts\Exchange\Payload
 {
     /** @JMS\Type("string") */
     public string $body;

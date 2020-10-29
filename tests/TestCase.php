@@ -4,6 +4,7 @@ namespace Butschster\Tests;
 
 use Butschster\Exchanger\Contracts\ExchangeManager;
 use Butschster\Exchanger\Exchange\Request\Dispatcher;
+use Butschster\Exchanger\Jms\Config;
 use Butschster\Exchanger\Payloads\Request;
 use Butschster\Exchanger\Payloads\Response;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -140,6 +141,14 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected function mockExchangeConfig(): m\MockInterface
     {
         return $this->mock(Exchange\Config::class);
+    }
+
+    /**
+     * @return m\MockInterface|Config
+     */
+    protected function mockSerializerConfig(): m\MockInterface
+    {
+        return $this->mock(Config::class);
     }
 
     /**

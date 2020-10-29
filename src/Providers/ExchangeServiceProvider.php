@@ -5,8 +5,13 @@ namespace Butschster\Exchanger\Providers;
 use Butschster\Exchanger\Exchange\Config as ExchangeConfig;
 use Butschster\Exchanger\Exchange\Request\JWTTokenDecoder;
 use Butschster\Exchanger\Jms\Mapping;
+use Butschster\Exchanger\Jms\ObjectsMapper;
+use Doctrine\Common\Annotations\Reader;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\ServiceProvider;
+use JMS\Serializer\Builder\CallbackDriverFactory;
+use JMS\Serializer\SerializerBuilder;
+use JMS\Serializer\Type\Parser;
 use PhpAmqpLib\Connection\AMQPSSLConnection;
 use Butschster\Exchanger\Amqp\Config;
 use Butschster\Exchanger\Amqp\Connector;
@@ -24,6 +29,7 @@ use Butschster\Exchanger\Contracts\Serializer as SerializerContract;
 use Butschster\Exchanger\Exchange\DefaultPayloadFactory;
 use Butschster\Exchanger\ExchangeManager;
 use Butschster\Exchanger\Jms\Serializer;
+use Butschster\Exchanger\Jms\Config as SerializerConfig;
 
 class ExchangeServiceProvider extends ServiceProvider
 {
@@ -33,7 +39,6 @@ class ExchangeServiceProvider extends ServiceProvider
         $this->registerSerializer();
         $this->registerExchangeManager();
         $this->registerPayloadFactory();
-        $this->registerMappingDriver();
         $this->registerTokenDecoder();
     }
 
@@ -46,7 +51,30 @@ class ExchangeServiceProvider extends ServiceProvider
 
     private function registerSerializer()
     {
-        $this->app->singleton(SerializerContract::class, Serializer::class);
+        $this->app->singleton(SerializerContract::class, function() {
+            $builder = new SerializerBuilder();
+
+            return new Serializer(
+                $builder,
+                $this->app[SerializerConfig::class],
+                $this->app[Exchange\Config::class]->version()
+            );
+        });
+
+        $this->app->singleton(SerializerContract\ObjectsMapper::class, function () {
+            $config = $this->app[SerializerConfig::class];
+
+            return new ObjectsMapper(
+                new CallbackDriverFactory(function (array $metadataDirs, Reader $annotationReader) use($config) {
+                    return new Mapping\Driver(
+                        $config,
+                        new Parser()
+                    );
+                }),
+                $this->app[SerializerContract::class],
+                $config
+            );
+        });
     }
 
     private function registerAmqp()
@@ -76,11 +104,6 @@ class ExchangeServiceProvider extends ServiceProvider
     private function registerPayloadFactory()
     {
         $this->app->singleton(Exchange\PayloadFactory::class, DefaultPayloadFactory::class);
-    }
-
-    private function registerMappingDriver()
-    {
-        $this->app->singleton(\Metadata\Driver\AdvancedDriverInterface::class, Mapping\Driver::class);
     }
 
     private function registerTokenDecoder()
