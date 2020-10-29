@@ -46,7 +46,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Butschster\\Exchanger\\ExchangerServiceProvider"
+                "Butschster\\Exchanger\\ExchangeServiceProvider"
             ]
         }
     },
