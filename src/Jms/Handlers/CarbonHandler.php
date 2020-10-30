@@ -17,7 +17,7 @@ class CarbonHandler implements Serializer\Handler
             Carbon::class,
             'json',
             function ($visitor, $date, array $type) {
-                return $date->toIso8601String();
+                return $date->format(DATE_W3C);
             }
         );
     }
