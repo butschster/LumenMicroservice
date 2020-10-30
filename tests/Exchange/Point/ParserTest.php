@@ -25,7 +25,7 @@ class ParserTest extends TestCase
     {
         $information = $this->parser->parse($this->point);
 
-        $this->assertCount(2, $information->getRouteSubjects());
+        $this->assertCount(5, $information->getRouteSubjects());
 
         // Only public methods with subject annotations can be subjects
         $this->assertContains('com.test.action.name', $information->getRouteSubjects());
@@ -51,7 +51,7 @@ class TestPoint implements Point
     }
 
     /**
-     * @subject action.name
+     * @subject com.test.action.name
      * @disableMiddleware Butschster\Tests\Exchange\Point\TestMiddleware1
      */
     public function methodWithSubject(IncomingRequest $request, LoggerInterface $logger): void
@@ -60,7 +60,7 @@ class TestPoint implements Point
     }
 
     /**
-     * @subject action.name1
+     * @subject com.test.action.name1
      * @middleware Butschster\Tests\Exchange\Point\TestMiddleware
      * @middleware Butschster\Tests\Exchange\Point\TestMiddleware1
      */
@@ -69,15 +69,26 @@ class TestPoint implements Point
 
     }
 
+    /**
+     * @subject com.test.action.name5
+     * @subject com.test.action.name6
+     * @subject com.test.action.name7
+     * @disableMiddleware Butschster\Tests\Exchange\Point\TestMiddleware1
+     */
+    public function methodWithMultiplySubjects(IncomingRequest $request, LoggerInterface $logger): void
+    {
+
+    }
+
     public function methodWithoutSubject(): void{}
 
     /**
-     * @subject action.name2
+     * @subject com.test.action.name2
      */
     protected function protectedMethod(): void{}
 
     /**
-     * @subject action.name3
+     * @subject com.test.action.name3
      */
     private function privateMethod(): void{}
 }

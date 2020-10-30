@@ -59,7 +59,7 @@ class Parser
             return new Subject(
                 $exchange,
                 $reflectionMethod->getName(),
-                $exchange->getName() . '.' . $subject,
+                $subject,
                 $this->getParameters($reflectionMethod),
                 $this->getMiddleware($comment),
                 $this->getDisabledMiddleware($comment)
