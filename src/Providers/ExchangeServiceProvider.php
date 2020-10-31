@@ -3,6 +3,7 @@
 namespace Butschster\Exchanger\Providers;
 
 use Butschster\Exchanger\Exchange\Config as ExchangeConfig;
+use Butschster\Exchanger\Exchange\IncomingRequest;
 use Butschster\Exchanger\Exchange\Request\JWTTokenDecoder;
 use Butschster\Exchanger\Jms\Mapping;
 use Butschster\Exchanger\Jms\ObjectsMapper;
@@ -47,6 +48,7 @@ class ExchangeServiceProvider extends ServiceProvider
         $this->app->singleton(Exchange\Config::class, ExchangeConfig::class);
         $this->app->singleton(Exchange\Client::class, AmqpExchangeClient::class);
         $this->app->singleton(ExchangeManagerContract::class, ExchangeManager::class);
+        $this->app->singleton(Exchange\IncomingRequest::class, IncomingRequest::class);
     }
 
     private function registerSerializer()
