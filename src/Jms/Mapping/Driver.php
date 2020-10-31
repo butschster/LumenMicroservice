@@ -39,13 +39,7 @@ class Driver implements AdvancedDriverInterface
             $classMetadata = new ClassMetadata($className);
         }
 
-        $classMap = $this->config->getClassMap($className);
-
-        if (!$classMap) {
-            return null;
-        }
-
-        $attributes = $classMap['attributes'] ?? [];
+        $attributes = $this->getAttributesFor($className);
 
         foreach ($attributes as $property => $metaData) {
             if (!$class->hasProperty($property)) {
@@ -71,5 +65,29 @@ class Driver implements AdvancedDriverInterface
         }
 
         return $classMetadata;
+    }
+
+    /**
+     * Gets class attributes from config
+     * @param string $class
+     * @return array
+     */
+    private function getAttributesFor(string $class): array
+    {
+        $classMap = $this->config->getClassMap($class);
+
+        if (!$classMap) {
+            return [];
+        }
+
+        $attributes = $classMap['attributes'] ?? [];
+
+        if (isset($classMap['extends'])) {
+            $parentAttributes = $this->getAttributesFor($classMap['extends']);
+
+            $attributes = array_merge($attributes, $parentAttributes);
+        }
+
+        return $attributes;
     }
 }
