@@ -28,7 +28,6 @@ interface ExchangeManager
      * Create request
      * @param string $subject
      * @param Exchange\Payload|null $payload
-     *
      * @return Request
      */
     public function request(string $subject, ?Exchange\Payload $payload = null): Request;
@@ -37,8 +36,8 @@ interface ExchangeManager
      * Broadcast message
      * @param string $subject
      * @param Exchange\Payload|null $payload
-     *
+     * @param bool $persistent
      * @return void
      */
-    public function broadcast(string $subject, ?Exchange\Payload $payload = null): void;
+    public function broadcast(string $subject, ?Exchange\Payload $payload = null, bool $persistent = false): void;
 }

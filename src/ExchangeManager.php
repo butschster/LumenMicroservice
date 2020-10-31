@@ -78,9 +78,9 @@ class ExchangeManager implements Contracts\ExchangeManager
     }
 
     /** @inheritDoc */
-    public function broadcast(string $subject, ?Exchange\Payload $payload = null): void
+    public function broadcast(string $subject, ?Exchange\Payload $payload = null, bool $persistent = false): void
     {
-        $this->request($subject, $payload)->broadcast();
+        $this->request($subject, $payload)->broadcast($persistent);
     }
 
     /**

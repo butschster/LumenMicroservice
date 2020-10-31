@@ -10,12 +10,14 @@ interface Request
      * Send request
      *
      * @param string $responsePayload
+     * @param bool $persistent
      * @return Response
      */
-    public function send(string $responsePayload): Response;
+    public function send(string $responsePayload, bool $persistent = true): Response;
 
     /**
      * Broadcast data
+     * @param bool $persistent
      */
-    public function broadcast(): void;
+    public function broadcast(bool $persistent = false): void;
 }

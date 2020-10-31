@@ -59,7 +59,7 @@ class RequestTest extends TestCase
             ->andReturn($responsePayload = new ResponsePayload());
 
         $this->client->shouldReceive('request')
-            ->once()->with('com.test', '{hello:world}')->andReturn('{foo:bar}');
+            ->once()->with('com.test', '{hello:world}', true)->andReturn('{foo:bar}');
 
         $this->assertEquals(
             $responsePayload,
@@ -73,7 +73,7 @@ class RequestTest extends TestCase
             ->once()->with($this->requestPayload)->andReturn('{hello:world}');
 
         $this->client->shouldReceive('broadcast')
-            ->once()->with('com.test', '{hello:world}');
+            ->once()->with('com.test', '{hello:world}', false);
 
         $this->makeRequest()->broadcast();
     }

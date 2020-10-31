@@ -50,20 +50,21 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
-    public function send(string $responsePayload): ResponsePayload
+    public function send(string $responsePayload, bool $persistent = true): ResponsePayload
     {
         return $this->makeResponse(
-            $this->sendRequest(),
+            $this->sendRequest($persistent),
             $responsePayload
         );
     }
 
     /** @inheritDoc */
-    public function broadcast(): void
+    public function broadcast(bool $persistent = false): void
     {
         $this->client->broadcast(
             $this->subject,
-            $this->serializer->serialize($this->payload)
+            $this->serializer->serialize($this->payload),
+            $persistent
         );
     }
 
@@ -75,13 +76,15 @@ class Request implements RequestContract
 
     /**
      * Send request and get response
+     * @param bool $persistent
      * @return string
      */
-    private function sendRequest(): string
+    private function sendRequest(bool $persistent): string
     {
         return $this->client->request(
             $this->subject,
-            $this->serializer->serialize($this->payload)
+            $this->serializer->serialize($this->payload),
+            $persistent
         );
     }
 }

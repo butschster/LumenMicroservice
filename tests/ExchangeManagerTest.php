@@ -101,7 +101,7 @@ class ExchangeManagerTest extends TestCase
 
         $this->serializer->shouldReceive('serialize')
             ->once()->with($requestPayload)->andReturn($serializedData = '{hello: world}');
-        $this->client->shouldReceive('broadcast')->once()->with('com.test', $serializedData);
+        $this->client->shouldReceive('broadcast')->once()->with('com.test', $serializedData, false);
 
         $this->assertNull(
             $this->makeExchangeManager()->broadcast('com.test')
@@ -119,7 +119,7 @@ class ExchangeManagerTest extends TestCase
 
         $this->serializer->shouldReceive('serialize')
             ->once()->with($requestPayload)->andReturn($serializedData = '{hello: world}');
-        $this->client->shouldReceive('broadcast')->once()->with('com.test', $serializedData);
+        $this->client->shouldReceive('broadcast')->once()->with('com.test', $serializedData, false);
 
         $this->assertNull(
             $this->makeExchangeManager()->broadcast('com.test', $payload)
