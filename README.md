@@ -2,15 +2,22 @@
 [![Build Status](https://travis-ci.org/butschster/LumenMicroservice.svg)](https://travis-ci.org/butschster/LumenMicroservice) [![Latest Stable Version](https://poser.pugx.org/butschster/lumen-microservice/v/stable)](https://packagist.org/packages/butschster/lumen-microservice) [![Total Downloads](https://poser.pugx.org/butschster/lumen-microservice/downloads)](https://packagist.org/packages/butschster/lumen-microservice) [![License](https://poser.pugx.org/butschster/lumen-microservice/license)](https://packagist.org/packages/butschster/lumen-microservice)
 ![heading](https://user-images.githubusercontent.com/773481/96422465-b6bbe800-1200-11eb-914a-8c2c150d80eb.jpg)
 
-This Package helps you to use Lumen framework as a microservice through AMQP without extra knowledge. 
-Just install package, create Exchange Point class and start exchanging information between services through RabbitMQ.
+This Package can help you to use Lumen framework or Laravel as a microservice without extra knowledge. 
+Just install package, create Exchange Point class and start exchanging information between services through MQ.
 
-For serialization this package uses JMS\Serializer.
+This package uses [JMS\Serializer](https://github.com/schmittjoh/serializer) for message serialization.
 
-P.S. You can use this service for testing https://www.cloudamqp.com. They have free plan.
+*P.S. You can use this service for testing https://www.cloudamqp.com. They have a free plan.*
+
+## Features
+- Easy to use out of the box
+- Easy to configure
+- jms serializer
+- Uses MQ out of the box
+- Well tested
 
 ## Requirements
-- Lumen 7.x to 8.x
+- Lumen or Laravel 7.x to 8.x
 - PHP 7.4 and above
    
 ## Installation and Configuration
@@ -20,14 +27,16 @@ From the command line run
 
 #### Register Service provider
 ```php
+// bootstrap.php
 $app->register(Butschster\Exchanger\Providers\ExchangeServiceProvider::class);
 ```
 
-#### Copy configs from package `config` directory to your Lumen app and register them.
+#### Copy config files from package `config` directory to your Lumen app and register them.
 
 ```php
 $app->configure('amqp');
 $app->configure('microservice');
+$app->configure('serializer');
 ```
 
 #### Add variables to your .env file
@@ -38,8 +47,8 @@ RABBITMQ_HOST=...
 RABBITMQ_USERNAME=...
 RABBITMQ_PASSWORD=...
 RABBITMQ_VHOST=...
+JWT_SECRET=...
 ```
-
 
 #### Create exchange point in your app
 This point will use for receiving request from other services and for sending responses.
@@ -48,6 +57,8 @@ This point will use for receiving request from other services and for sending re
 namespace App\Exchange\Point;
 
 use Butschster\Exchanger\Contracts\Exchange\Point as PointContract;
+use Psr\Log\LoggerInterface;
+use Butschster\Exchanger\Contracts\Exchange\IncomingRequest;
 
 class Point implements PointContract
 {
@@ -57,24 +68,28 @@ class Point implements PointContract
     }
 
     /**
-     * // subject: com.test.action.test
-     * @subject action.test
+     * @subject com.test.action.test
      */
     public function testSubject(IncomingRequest $request, LoggerInterface $logger)
     {
         $logger->info(
             sprintf('info [%s]:', $request->getSubject()),
-            [$payload]
+            [$request->getBody()]
         );
 
         // Response
         $payload = new ...;
         $request->sendResponse($payload);
+
+        // or
+        $request->sendEmptyResponse();
+
+        // or
+        $request->acknowledge();
     }
 
     /**
-     * // subject: com.test.action.test1
-     * @subject action.test1
+     * @subject com.test.action.test1
      */
     public function anotherTestSubject(IncomingRequest $request, LoggerInterface $logger)
     {
@@ -112,7 +127,186 @@ class Kernel extends ConsoleKernel
 }
 ```
 
-#### Runnig microservice
+#### Sending requests
+For requesting information from another service you should use `ExchangeManager`
+
+```php
+use Butschster\Exchanger\Contracts\ExchangeManager;
+
+class UserController {
+
+    public function getUser(ExchangeManager $manager, int $userId)
+    {
+        $requestPayload = new GetUserByIdPayload($userId);
+
+        $request = $manager->request('com.test.action.test', $requestPayload);
+        $user = $request->send(UserPayload::class);
+
+        // You can set delivery mode to persistent
+        $user = $request->send(UserPayload::class, true);
+    }
+}
+
+// User Request Payload
+
+use JMS\Serializer\Annotation\Type;
+
+class GetUserByIdPayload implements \Butschster\Exchanger\Contracts\Exchange\Payload
+{
+    /** @Type("string") */
+    public string $userId;
+    public function __construct(string $userId)
+    {
+        $this->userId = $userId;
+    }
+}
+
+// User Payload
+
+use JMS\Serializer\Annotation\Type;
+
+class UserPayload implements \Butschster\Exchanger\Contracts\Exchange\Payload
+{
+    /** @Type("string") */
+    public string $id;
+
+    /** @Type("string") */
+    public string $username;
+
+    /** @Type("string") */
+    public string $email;
+
+    /** @Type("Carbon\Carbon") */
+    public \Carbon\Carbon $createdAt;
+}
+```
+
+#### Broadcasting
+If you want to send an event you should use `ExchangeManager` method `broadcast`
+
+```php
+use Illuminate\Http\Request;
+use Butschster\Exchanger\Contracts\ExchangeManager;
+
+class UserController {
+
+    public function update(ExchangeManager $manager, Request $request, User $user)
+    {
+        $payload = new UserPayload();
+        $data = $request->validate(...);
+        $user->update($data);
+
+        $payload->id = $user->id;
+        $payload->username = $user->username;
+        ...
+        
+        $manager->broadcast('com.user.event.updated', $payload);
+
+        // You can set delivery mode to persistent
+        $manager->broadcast('com.user.event.updated', $payload, true);
+    }
+}
+```
+
+#### Entity mapping
+You can configure entity mapping in `serializer.php` config.
+
+```php
+// serializer.php
+return [
+    'mapping' => [
+        Domain\User\Entities\User::class => [
+            'to' => Payloads\User::class,
+            'attributes' => [
+                'id' => ['type' => 'string'],
+                'username' => ['type' => 'string'],
+                'email' => ['type' => 'string'],
+                'balance' => ['type' => Domain\Billing\Money\Token::class],
+                'createdAt' => ['type' => \Carbon\Carbon::class],
+            ]
+        ],
+        Domain\Billing\Money\Token::class => [
+            'to' => Payloads\Billing\Token::class,
+            'attributes' => [
+                'amount' => ['type' => \Brick\Math\BigDecimal::class],
+            ]
+        ],
+    ],
+    // ...
+];
+```
+
+And then you can easily convert entities to payloads
+
+```php
+use Butschster\Exchanger\Contracts\Serializer\ObjectsMapper;
+
+class UserController {
+
+    public function update(ObjectsMapper $mapper, ExchangeManager $manager, Request $request, Domain\User\Entities\User $user)
+    {
+        $data = $request->validate(...);
+        $user->update($data);
+        
+        $payload = $mapper->toPayload($user);
+        
+        $manager->broadcast('com.user.event.updated', $payload);
+    }
+}
+```
+
+#### Custom types
+If you want to use custom JMS Serializer types you should use handlers. They can be added in `serializer.php` config.
+
+```php
+// serializer.php
+return [
+    'handlers' => [
+        Butschster\Exchanger\Jms\Handlers\CarbonHandler::class,
+        Infrastructure\Microservice\Jms\Handlers\BigDecimalHandler::class
+    ],
+    // ..
+];
+
+// BigDecimalHandler.php
+
+namespace Infrastructure\Microservice\Jms\Handlers;
+
+use Brick\Math\BigDecimal;
+use Butschster\Exchanger\Contracts\Serializer;
+use Butschster\Exchanger\Contracts\Serializer\Handler;
+use JMS\Serializer\GraphNavigatorInterface;
+use JMS\Serializer\Handler\HandlerRegistryInterface;
+
+class BigDecimalHandler implements Handler
+{
+    public function serialize(Serializer $serializer, HandlerRegistryInterface $registry): void
+    {
+        $registry->registerHandler(
+            GraphNavigatorInterface::DIRECTION_SERIALIZATION,
+            BigDecimal::class,
+            'json',
+            function ($visitor, BigDecimal $value, array $type) {
+                return $value->toInt();
+            }
+        );
+    }
+
+    public function deserialize(Serializer $serializer, HandlerRegistryInterface $registry): void
+    {
+        $registry->registerHandler(
+            GraphNavigatorInterface::DIRECTION_DESERIALIZATION,
+            BigDecimal::class,
+            'json',
+            function ($visitor, $value, array $type) {
+                return BigDecimal::of($value);
+            }
+        );
+    }
+}
+```
+
+#### Service running
 This single command will run your microservice and start listening to commands registered in your exchange point.  
 
 `php artisan service:run`
@@ -145,49 +339,4 @@ sudo supervisorctl reread
 sudo supervisorctl update
 
 sudo supervisorctl start microservice
-```
-
-#### Sending requests
-For requesting information from another service you should use `ExchangeManager`
-
-```php
-use Butschster\Exchanger\Contracts\ExchangeManager;
-
-class UserController {
-
-    public function getUser(ExchangeManager $manager, int $userId)
-    {
-        $request = new GetUserByIdPayload();
-        $request->userId = $userId;
-
-        $user = $manager->request('com.test.action.test', $request);
-        ...
-    }
-
-}
-```
-
-#### Broadcasting
-If you want to send event to all services you should use `ExchangeManager`
-
-```php
-use Illuminate\Http\Request;
-use Butschster\Exchanger\Contracts\ExchangeManager;
-
-class UserController {
-
-    public function update(ExchangeManager $manager, Request $request, User $user)
-    {
-        $payload = new UserPayload();
-        $data = $request->validate(...);
-        $user->update($data);
-
-        $payload->id = $user->id;
-        $payload->username = $user->username;
-        ...
-        
-        $manager->broadcast('com.user.event.updated', $payload);
-    }
-
-}
 ```
