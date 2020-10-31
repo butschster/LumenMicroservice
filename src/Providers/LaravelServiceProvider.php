@@ -2,6 +2,8 @@
 
 namespace Butschster\Exchanger\Providers;
 
+use Butschster\Exchanger\Console\Commands\RunMicroservice;
+
 class LaravelServiceProvider extends ExchangeServiceProvider
 {
     protected array $configs = ['amqp', 'microservice', 'serializer'];
@@ -16,7 +18,13 @@ class LaravelServiceProvider extends ExchangeServiceProvider
             $this->mergeConfigFrom(__DIR__ . '/../../config/' . $config . '.php', $config);
         }
 
-        $this->publishConfig();
+        if ($this->app->runningInConsole()) {
+            $this->publishConfig();
+
+            $this->commands([
+                RunMicroservice::class
+            ]);
+        }
     }
 
     /**
@@ -24,12 +32,10 @@ class LaravelServiceProvider extends ExchangeServiceProvider
      */
     public function publishConfig(): void
     {
-        if ($this->app->runningInConsole()) {
-            foreach ($this->configs as $config) {
-                $this->publishes([
-                    __DIR__ . '/../../config/' . $config . '.php' => config_path($config . '.php'),
-                ], 'lumen-microservice');
-            }
+        foreach ($this->configs as $config) {
+            $this->publishes([
+                __DIR__ . '/../../config/' . $config . '.php' => config_path($config . '.php'),
+            ], 'lumen-microservice');
         }
     }
 }
