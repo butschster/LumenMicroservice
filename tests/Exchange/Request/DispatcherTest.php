@@ -6,6 +6,7 @@ use Butschster\Exchanger\Contracts\Exchange\IncomingRequest;
 use Butschster\Exchanger\Contracts\Exchange\Request\Token;
 use Butschster\Exchanger\Contracts\Exchange\Request\TokenDecoder;
 use Butschster\Exchanger\Exceptions\Handler;
+use Butschster\Exchanger\Exchange\Request\DependencyResolver;
 use Butschster\Exchanger\Exchange\Request\Dispatcher;
 use Butschster\Exchanger\Payloads\Request\Headers;
 use Butschster\Tests\TestCase;
@@ -21,6 +22,7 @@ class DispatcherTest extends TestCase
     /** @var \Butschster\Exchanger\Contracts\Serializer|\Mockery\MockInterface */
     private $serializer;
     private \Mockery\MockInterface $pipeline;
+    private \Mockery\MockInterface $dependencyResolver;
 
     protected function setUp(): void
     {
@@ -30,6 +32,7 @@ class DispatcherTest extends TestCase
         $this->container = $this->mockContainer();
         $this->serializer = $this->mockSerializer();
         $this->pipeline = $this->mock(Pipeline::class);
+        $this->dependencyResolver = $this->mock(DependencyResolver::class);
     }
 
     function test_dispatch()
@@ -56,17 +59,13 @@ class DispatcherTest extends TestCase
         $this->assertDispatcherData($payload, $headers);
     }
 
-    function test_dispatch_should_handle_exception_if_it_will_throw()
+    function test_dispatch_should_handle_exception_if_it_was_thrown()
     {
-        $payload = json_decode('{"hello":"world","headers":{"ip":"127.0.0.1"}}');
+        $headers = new Headers();
 
         $message = $this->mockAmqpMessage();
         $message->shouldReceive('getPayload')
-            ->once()->andReturn($payload);
-
-        $this->serializer->shouldReceive('deserialize')
-            ->once()->with($payload->headers, Headers::class)
-            ->andReturn($headers = new Headers());
+            ->once()->with('headers', Headers::class)->andReturn($headers);
 
         $this->container->shouldReceive('make')->once()->with(
                 IncomingRequest::class,
@@ -90,29 +89,31 @@ class DispatcherTest extends TestCase
         $this->makeDispatcher()->dispatch($message, $route);
     }
 
-    protected function makeDispatcher()
+    protected function makeDispatcher(): Dispatcher
     {
         return new Dispatcher(
             $this->exceptionsHandler,
             $this->container,
             $this->serializer,
-            $this->pipeline
+            $this->pipeline,
+            $this->dependencyResolver
         );
     }
 
     private function assertDispatcherData($payload, Headers $headers): void
     {
+        $args = new Collection();
+        $dependencies = ['foo', 'bar'];
+        $request = $this->mockExchangeIncomingRequest();
+
         $route = $this->mockExchangeRoute();
-        $route->shouldReceive('getArguments')->once()->andReturn(new Collection());
+        $route->shouldReceive('getArguments')->once()->andReturn($args);
         $route->shouldReceive('getMiddleware')->once()->andReturn([]);
-        $route->shouldReceive('call')->once()->with([]);
+        $route->shouldReceive('call')->once()->with($dependencies);
 
         $message = $this->mockAmqpMessage();
         $message->shouldReceive('getPayload')
-            ->once()->andReturn($payload);
-
-        $this->serializer->shouldReceive('deserialize')
-            ->once()->with($payload->headers, Headers::class)
+            ->once()->with('headers', Headers::class)
             ->andReturn($headers);
 
         $this->container->shouldReceive('make')
@@ -122,7 +123,11 @@ class DispatcherTest extends TestCase
                     'message' => $message,
                     'headers' => $headers
                 ]
-            )->andReturn($request = $this->mockExchangeIncomingRequest());
+            )->andReturn($request);
+
+
+        $this->dependencyResolver->shouldReceive('resolve')->once()
+            ->with($request, $args)->andReturn($dependencies);
 
         $this->makeDispatcher()->dispatch($message, $route);
     }

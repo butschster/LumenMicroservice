@@ -3,41 +3,42 @@
 namespace Butschster\Exchanger\Exchange\Request;
 
 use Butschster\Exchanger\Contracts\Exchange\Request\TokenDecoder;
-use Butschster\Exchanger\Exceptions\InvalidTokenException;
 use Closure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Pipeline\Pipeline;
-use Illuminate\Support\Collection;
-use Psr\Log\LoggerInterface;
 use Throwable;
 use Butschster\Exchanger\Contracts\Amqp\Message;
 use Butschster\Exchanger\Contracts\Exchange\IncomingRequest;
 use Butschster\Exchanger\Contracts\Exchange\Route;
 use Butschster\Exchanger\Contracts\Serializer;
 use Butschster\Exchanger\Exceptions\Handler;
-use Butschster\Exchanger\Exceptions\ParameterCannotBeResolvedException;
-use Butschster\Exchanger\Exchange\Point\Argument;
 use Butschster\Exchanger\Payloads\Request\Headers as RequestHeaders;
 
+/**
+ * @internal
+ */
 class Dispatcher
 {
     private Pipeline $pipeline;
     private Serializer $serializer;
     private Container $container;
     private Handler $exceptionsHandler;
+    private DependencyResolver $dependencyResolver;
 
     public function __construct(
         Handler $exceptionsHandler,
         Container $container,
         Serializer $serializer,
-        Pipeline $pipeline
+        Pipeline $pipeline,
+        DependencyResolver $dependencyResolver
     )
     {
         $this->pipeline = $pipeline;
         $this->serializer = $serializer;
         $this->container = $container;
         $this->exceptionsHandler = $exceptionsHandler;
+        $this->dependencyResolver = $dependencyResolver;
     }
 
     /**
@@ -51,7 +52,7 @@ class Dispatcher
         $request = $this->makeIncomingRequest($message);
 
         try {
-            $dependencies = $this->resolveDependencies(
+            $dependencies = $this->dependencyResolver->resolve(
                 $request, $route->getArguments()
             );
 
@@ -85,41 +86,6 @@ class Dispatcher
     }
 
     /**
-     * Inject dependencies to subject method
-     * @param IncomingRequest $request
-     * @param Collection $dependencies
-     *
-     * @return array
-     */
-    private function resolveDependencies(IncomingRequest $request, Collection $dependencies): array
-    {
-        return $dependencies->map(function (Argument $dependency) use ($request) {
-            return $this->resolveDependency($request, $dependency);
-        })->toArray();
-    }
-
-    /**
-     * Resolve dependencies from exchange point subject method
-     * @param IncomingRequest $request
-     * @param Argument $dependency
-     * @return object
-     */
-    private function resolveDependency(IncomingRequest $request, Argument $dependency)
-    {
-        if ($dependency->is(Message::class, IncomingRequest::class)) {
-            return $request;
-        }
-
-        if ($dependency->is(LoggerInterface::class)) {
-            return $this->container->make(LoggerInterface::class);
-        }
-
-        throw new ParameterCannotBeResolvedException(
-            $dependency->getName()
-        );
-    }
-
-    /**
      * Handle exceptions
      * @param IncomingRequest $request
      * @param Throwable $e
@@ -142,31 +108,22 @@ class Dispatcher
     {
         return $this->container->make(IncomingRequest::class, [
             'message' => $message,
-            'headers' => $this->parseHeaders($message->getPayload())
+            'headers' => $this->parseHeaders(
+                $message->getPayload('headers', RequestHeaders::class)
+            )
         ]);
     }
 
     /**
-     * @param object $body
-     * @return \Butschster\Exchanger\Contracts\Exchange\Payload|RequestHeaders|null
+     * @param RequestHeaders|null $headers
+     * @return RequestHeaders|null
      * @throws BindingResolutionException
-     * @throws InvalidTokenException
      */
-    private function parseHeaders(object $body): ?RequestHeaders
+    private function parseHeaders(?RequestHeaders $headers = null): ?RequestHeaders
     {
-        /** @var RequestHeaders|null $headers */
-        $headers = null;
-
-        if (isset($body->headers)) {
-            $headers = $this->serializer->deserialize(
-                $body->headers,
-                RequestHeaders::class
-            );
-
-            if (!empty($headers->token)) {
-                $headers->tokenInfo = $this->container->make(TokenDecoder::class)
-                    ->decode($headers->token);
-            }
+        if (!empty($headers->token)) {
+            $headers->tokenInfo = $this->container->make(TokenDecoder::class)
+                ->decode($headers->token);
         }
 
         return $headers;

@@ -80,9 +80,9 @@ class IncomingRequest implements IncomingRequestContract
     }
 
     /** @inheritDoc */
-    public function getPayload()
+    public function getPayload(string $property, ?string $payloadClass = null)
     {
-        return $this->message->getPayload();
+        return $this->message->getPayload($property, $payloadClass);
     }
 
     /** @inheritDoc */

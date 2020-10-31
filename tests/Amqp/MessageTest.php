@@ -5,6 +5,7 @@ namespace Butschster\Tests\Amqp;
 use Butschster\Exchanger\Amqp\Message;
 use Butschster\Exchanger\Payloads\Error;
 use Butschster\Exchanger\Payloads\Payload;
+use Butschster\Exchanger\Payloads\Request\Headers;
 use Butschster\Exchanger\Payloads\Response;
 use Butschster\Tests\TestCase;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -45,16 +46,32 @@ class MessageTest extends TestCase
 
     function test_gets_payload()
     {
-        $payload = $this->makeMessage()->getPayload();
+        $payload = $this->makeMessage()->getPayload('foo');
 
         $this->assertEquals(
             'bar',
-            $payload->foo
+            $payload
         );
+    }
 
-        $this->assertInstanceOf(
-            Payload::class,
-            $payload->payload
+    function test_gets_non_exists_payload()
+    {
+        $payload = $this->makeMessage()->getPayload('test');
+
+        $this->assertNull(
+            $payload
+        );
+    }
+
+    function test_gets_payload_with_known_class()
+    {
+        $this->serializer->shouldReceive('deserialize')
+            ->once()->with('"bar"', Headers::class)->andReturn('test');
+        $payload = $this->makeMessage()->getPayload('foo', Headers::class);
+
+        $this->assertEquals(
+            'test',
+            $payload
         );
     }
 

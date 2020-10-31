@@ -46,27 +46,35 @@ class Message implements MessageContract
         $this->factory = $factory;
     }
 
+    /** @inheritDoc */
     public function getBody(): string
     {
         return $this->body;
     }
 
+    /** @inheritDoc */
     public function getSubject(): string
     {
         return $this->subject;
     }
 
-    public function getPayload()
+    /** @inheritDoc */
+    public function getPayload(string $property, ?string $class = null)
     {
         $body = json_decode($this->getBody());
 
-        if (!isset($body->payload)) {
-            $body->payload = new Payload();
+        if (isset($body->{$property})) {
+            if ($class) {
+                return $this->serializer->deserialize(json_encode($body->{$property}), $class);
+            }
+
+            return $body->{$property};
         }
 
-        return $body;
+        return null;
     }
 
+    /** @inheritDoc */
     public function reply(PayloadContract $payload, array $errors = [], ?Response\Headers $headers = null, bool $persistent = true): void
     {
         $responseMessage = $this->serializer->serialize(

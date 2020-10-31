@@ -9,9 +9,11 @@ interface Message
 {
     /**
      * Get payload object
+     * @param string $property
+     * @param string|null $payloadClass
      * @return object
      */
-    public function getPayload();
+    public function getPayload(string $property, ?string $payloadClass = null);
 
     /**
      * Get payload as serialized string (json)
