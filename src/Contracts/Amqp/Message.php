@@ -32,4 +32,9 @@ interface Message
      * @param Response\Headers|null $headers
      */
     public function reply(Payload $payload, array $errors = [], ?Response\Headers $headers = null): void;
+
+    /**
+     * Confirm message receiving
+     */
+    public function acknowledge(): void;
 }

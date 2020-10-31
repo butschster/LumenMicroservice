@@ -115,11 +115,11 @@ class IncomingRequestTest extends TestCase
     function test_gets_payload()
     {
         $this->message->shouldReceive('getPayload')
-            ->once()->andReturn($payload = new Payload());
+            ->once()->with('foo', null)->andReturn($payload = new Payload());
 
         $this->assertEquals(
             $payload,
-            $this->makeIncomingRequest()->getPayload()
+            $this->makeIncomingRequest()->getPayload('foo')
         );
     }
 

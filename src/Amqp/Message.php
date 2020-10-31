@@ -82,6 +82,12 @@ class Message implements MessageContract
 
         $this->consumer->reply($reply, $this->replyTo);
 
+        $this->acknowledge();
+    }
+
+    /** @inheritDoc */
+    public function acknowledge(): void
+    {
         if ($this->originalMessage) {
             $this->consumer->acknowledge($this->originalMessage);
         }

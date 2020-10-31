@@ -90,4 +90,10 @@ class IncomingRequest implements IncomingRequestContract
     {
         return $this->requestHeaders;
     }
+
+    /** @inheritDoc */
+    public function acknowledge(): void
+    {
+        $this->message->acknowledge();
+    }
 }
