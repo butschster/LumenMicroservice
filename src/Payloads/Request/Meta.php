@@ -6,8 +6,6 @@ use JMS\Serializer\Annotation as JMS;
 
 class Meta
 {
-    /**
-     * @JMS\Type("Butschster\Exchanger\Payloads\Request\Pagination")
-     */
+    /** @JMS\Type("Butschster\Exchanger\Payloads\Request\Pagination") */
     public ?Pagination $pagination = null;
 }

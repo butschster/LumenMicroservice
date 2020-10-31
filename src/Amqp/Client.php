@@ -39,6 +39,7 @@ class Client implements ClientContract
         $this->container = $container;
     }
 
+    /** @inheritDoc */
     public function subscribe(Point $exchange, callable $handler): void
     {
         $pointInfo = $this->container->make(Parser::class)->parse($exchange);
@@ -61,6 +62,7 @@ class Client implements ClientContract
             });
     }
 
+    /** @inheritDoc */
     public function request(string $subject, string $payload, bool $persistent = true): string
     {
         $response = null;
@@ -78,6 +80,7 @@ class Client implements ClientContract
         return $response;
     }
 
+    /** @inheritDoc */
     public function deferredRequest(LoopInterface $loop, string $subject, string $payload, bool $persistent = true): PromiseInterface
     {
         $deferred = new Deferred();
@@ -97,6 +100,7 @@ class Client implements ClientContract
         return $deferred->promise();
     }
 
+    /** @inheritDoc */
     public function broadcast(string $subject, string $payload, bool $persistent = true): void
     {
         $this->publisher->publish(
@@ -107,6 +111,7 @@ class Client implements ClientContract
         );
     }
 
+    /** @inheritDoc */
     public function setProperty(string $property, $value): void
     {
         $this->properties[$property] = $value;

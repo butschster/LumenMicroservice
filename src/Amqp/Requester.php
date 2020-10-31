@@ -32,6 +32,7 @@ class Requester implements RequesterContract
         });
     }
 
+    /** @inheritDoc */
     public function request(array $properties, string $route, string $message, callable $callback, bool $persistent = true): void
     {
         $properties['routing'] = $route;
@@ -51,6 +52,7 @@ class Requester implements RequesterContract
         $this->connector->disconnect();
     }
 
+    /** @inheritDoc */
     public function deferredRequest(array $properties, LoopInterface $loop, string $route, string $message, bool $persistent = true): PromiseInterface
     {
         $properties['routing'] = $route;
@@ -144,13 +146,12 @@ class Requester implements RequesterContract
      */
     private function makeMessage(string $message, bool $persistent, string $correlationId): AMQPMessage
     {
-        $message = new AMQPMessage($message, [
+        return new AMQPMessage($message, [
             'content_type' => 'application/json',
             'delivery_mode' => $persistent ? AMQPMessage::DELIVERY_MODE_PERSISTENT : AMQPMessage::DELIVERY_MODE_NON_PERSISTENT,
             'correlation_id' => $correlationId,
             'reply_to' => $this->getQueueInfo(),
             'expiration' => '30000',
         ]);
-        return $message;
     }
 }

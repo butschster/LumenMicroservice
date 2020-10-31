@@ -18,6 +18,7 @@ class Publisher implements PublisherContract
         $this->connector = $connector;
     }
 
+    /** @inheritDoc */
     public function publish(array $properties, string $route, string $message, bool $persistent = true): void
     {
         $properties['routing'] = $route;

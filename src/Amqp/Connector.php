@@ -26,6 +26,7 @@ class Connector implements ConnectorContract
         $this->channel = $connection->channel();
     }
 
+    /** @inheritDoc */
     public function afterConnect(callable $handler): void
     {
         $this->afterCallbacks[] = $handler;

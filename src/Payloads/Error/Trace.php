@@ -6,23 +6,15 @@ use JMS\Serializer\Annotation as JMS;
 
 class Trace
 {
-    /**
-     * @JMS\Type("string")
-     */
+    /** @JMS\Type("string") */
     public string $file;
 
-    /**
-     * @JMS\Type("integer")
-     */
+    /** @JMS\Type("integer") */
     public int $line;
 
-    /**
-     * @JMS\Type("string")
-     */
+    /** @JMS\Type("string") */
     public string $function;
 
-    /**
-     * @JMS\Type("string")
-     */
+    /** @JMS\Type("string") */
     public string $class;
 }

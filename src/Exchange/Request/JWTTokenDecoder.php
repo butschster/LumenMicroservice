@@ -20,6 +20,7 @@ class JWTTokenDecoder implements TokenDecoder
         $this->algo = $algo;
     }
 
+    /** @inheritDoc */
     public function decode(string $token): Token
     {
         try {

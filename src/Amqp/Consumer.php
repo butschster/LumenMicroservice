@@ -29,6 +29,7 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
         $this->container = $container;
     }
 
+    /** @inheritDoc */
     public function consume(array $properties, string $queue, Closure $closure): bool
     {
         $properties['queue'] = $queue;
@@ -40,11 +41,13 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
         return $result;
     }
 
+    /** @inheritDoc */
     public function reply(AMQPMessage $message, string $replyTo): void
     {
         $this->connector->getChannel()->basic_publish($message, '', $replyTo);
     }
 
+    /** @inheritDoc */
     public function acknowledge(AMQPMessage $message): void
     {
         $message->getChannel()->basic_ack($message->getDeliveryTag());
@@ -54,6 +57,7 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
         }
     }
 
+    /** @inheritDoc */
     public function reject(AMQPMessage $message, bool $requeue = false): void
     {
         $message->getChannel()->basic_reject($message->getDeliveryTag(), $requeue);

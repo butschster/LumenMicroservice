@@ -10,7 +10,7 @@ class Headers
     /** @JMS\Type("Butschster\Exchanger\Payloads\Response\Meta") */
     public Meta $meta;
 
-    public function paginate(LengthAwarePaginator $paginator)
+    public function paginate(LengthAwarePaginator $paginator): void
     {
         $pagination = new Pagination();
         $pagination->total = $paginator->total();
