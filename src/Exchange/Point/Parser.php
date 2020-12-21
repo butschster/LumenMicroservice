@@ -3,6 +3,8 @@
 namespace Butschster\Exchanger\Exchange\Point;
 
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
+use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
 use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use ReflectionClass;
@@ -23,20 +25,6 @@ class Parser
         );
     }
 
-    private function getTagsFromComment(string $comment, string $tag): Collection
-    {
-        $docBlock = DocBlockFactory::createInstance()->create($comment);
-        $tags = $docBlock->getTagsByName($tag);
-
-        if (count($tags) == 0) {
-            throw new AnnotationTagNotFoundException($tag);
-        }
-
-        return collect($tags)->map(function (Generic $tag) {
-            return $tag->getDescription();
-        });
-    }
-
     private function findSubjects(Exchange\Point $exchange): Collection
     {
         $reflection = new ReflectionClass($exchange);
@@ -53,26 +41,61 @@ class Parser
     private function makeSubject(Exchange\Point $exchange, ReflectionMethod $reflectionMethod): array
     {
         $comment = $reflectionMethod->getDocComment();
-        $subjects = $this->getTagsFromComment($comment, 'subject');
+        $docBlock = DocBlockFactory::createInstance()->create($comment);
 
-        return $subjects->map(function (string $subject) use ($reflectionMethod, $comment, $exchange) {
+        $subjects = $this->getTagsFromCommentByKey($docBlock, 'subject');
+        if ($subjects->isEmpty()) {
+            throw new AnnotationTagNotFoundException('subject');
+        }
+
+        $requestPayload = $this->getTagsFromCommentByKey($docBlock, 'requestPayload')->first();
+        if ($requestPayload && !class_exists($requestPayload)) {
+            throw new InvalidArgumentException(sprintf('Request payload [%s] is not found', $requestPayload));
+        }
+
+        $responsePayload = $this->getTagsFromCommentByKey($docBlock, 'responsePayload')->first();
+        if ($responsePayload && !class_exists($responsePayload)) {
+            throw new InvalidArgumentException(sprintf('Response payload [%s] is not found', $responsePayload));
+        }
+
+        return $subjects->map(function (string $subject) use ($reflectionMethod, $docBlock, $exchange, $requestPayload, $responsePayload) {
             return new Subject(
                 $exchange,
                 $reflectionMethod->getName(),
+                $docBlock->getSummary(),
                 $subject,
                 $this->getParameters($reflectionMethod),
-                $this->getMiddleware($comment),
-                $this->getDisabledMiddleware($comment)
+                $this->getMiddleware($docBlock),
+                $this->getDisabledMiddleware($docBlock),
+                $requestPayload,
+                $responsePayload
             );
         })->all();
     }
 
-    private function getParameters(ReflectionMethod $reflectionMethod): Collection
+    private function getMiddleware(DocBlock $docBlock): array
     {
-        return collect($reflectionMethod->getParameters())
-            ->map(function (ReflectionParameter $reflectionParameter) {
-                return $this->makeParameter($reflectionParameter);
-            });
+        return $this->getTagsFromCommentByKey($docBlock, 'middleware')->toArray();
+    }
+
+    private function getDisabledMiddleware(DocBlock $docBlock): array
+    {
+        return $this->getTagsFromCommentByKey($docBlock, 'disableMiddleware')->toArray();
+    }
+
+    /**
+     * Get tags from php doc block by key
+     * @param DocBlock $docBlock
+     * @param string $key
+     * @return Collection
+     */
+    private function getTagsFromCommentByKey(DocBlock $docBlock, string $key): Collection
+    {
+        $tags = $docBlock->getTagsByName($key);
+
+        return collect($tags)->map(function ($tag) {
+            return (string)$tag->getDescription();
+        });
     }
 
     private function makeParameter(ReflectionParameter $reflectionParameter): Argument
@@ -83,25 +106,11 @@ class Parser
         );
     }
 
-    private function getMiddleware(string $comment): array
+    private function getParameters(ReflectionMethod $reflectionMethod): Collection
     {
-        $docBlock = DocBlockFactory::createInstance()->create($comment);
-        $tags = $docBlock->getTagsByName('middleware');
-
-        return collect($tags)
-            ->map(function ($tag) {
-                return (string)$tag->getDescription();
-            })->toArray();
-    }
-
-    private function getDisabledMiddleware(string $comment): array
-    {
-        $docBlock = DocBlockFactory::createInstance()->create($comment);
-        $tags = $docBlock->getTagsByName('disableMiddleware');
-
-        return collect($tags)
-            ->map(function ($tag) {
-                return (string)$tag->getDescription();
-            })->toArray();
+        return collect($reflectionMethod->getParameters())
+            ->map(function (ReflectionParameter $reflectionParameter) {
+                return $this->makeParameter($reflectionParameter);
+            });
     }
 }

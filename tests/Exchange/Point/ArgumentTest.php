@@ -50,4 +50,15 @@ class ArgumentTest extends TestCase
             $this->argument->is(ConsoleLogger::class)
         );
     }
+
+    function test_it_can_be_converted_to_array()
+    {
+        $this->assertEquals(
+            [
+                'name' => 'logger',
+                'class' => 'Psr\Log\LoggerInterface'
+            ],
+            $this->argument->toArray()
+        );
+    }
 }

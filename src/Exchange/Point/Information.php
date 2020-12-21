@@ -20,7 +20,7 @@ class Information
 
     /**
      * Get list of routes (exchange point subjects)
-     * @return Collection
+     * @return Collection|Subject[]
      */
     public function getRoutes(): Collection
     {
@@ -29,7 +29,7 @@ class Information
 
     /**
      * Get exchange point subject names
-     * @return array
+     * @return array|string[]
      */
     public function getRouteSubjects(): array
     {
@@ -41,7 +41,7 @@ class Information
     /**
      * Get route (subject) by name
      * @param string $subject
-     * @return Route|null
+     * @return Route
      */
     public function getRoute(string $subject): Route
     {
