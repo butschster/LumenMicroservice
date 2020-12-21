@@ -23,6 +23,7 @@ class SubjectTest extends TestCase
         $this->subject = new Subject(
             $this->point = $this->mockExchangePoint(),
             'methodName',
+            'Test description',
             'com.test.action.name',
             $this->arguments = new Collection([
                 new Argument('request', IncomingRequest::class),
@@ -30,6 +31,8 @@ class SubjectTest extends TestCase
             ]),
             ['middleware1', 'middleware2', 'middleware3'],
             ['middleware3'],
+            'Test\RequestPayload',
+            'Test\ResponsePayload',
         );
     }
 
@@ -48,6 +51,15 @@ class SubjectTest extends TestCase
             $this->subject->getName()
         );
     }
+
+    function test_gets_description()
+    {
+        $this->assertEquals(
+            'Test description',
+            $this->subject->getDescription()
+        );
+    }
+
 
     function test_gets_arguments()
     {
@@ -80,5 +92,46 @@ class SubjectTest extends TestCase
             ->once()->with('foo', 'bar');
 
         $this->subject->call($dependencies);
+    }
+
+    function test_gets_request_payload()
+    {
+        $this->assertEquals(
+            'Test\RequestPayload',
+            $this->subject->getRequestPayload()
+        );
+    }
+
+    function test_gets_response_payload()
+    {
+        $this->assertEquals(
+            'Test\ResponsePayload',
+            $this->subject->getResponsePayload()
+        );
+    }
+
+    function test_converts_to_array()
+    {
+        $this->assertEquals(
+            [
+                'name' => 'methodName',
+                'description' => 'Test description',
+                'middleware' => ['middleware1', 'middleware2'],
+                'disabledMiddleware' => ['middleware3'],
+                'request_payload' => 'Test\RequestPayload',
+                'response_payload' => 'Test\ResponsePayload',
+                'arguments' => [
+                    [
+                        'class' => 'Butschster\Exchanger\Exchange\IncomingRequest',
+                        'name' => 'request'
+                    ],
+                    [
+                        'class' => 'Psr\Log\LoggerInterface',
+                        'name' => 'logger'
+                    ]
+                ]
+            ],
+            $this->subject->toArray()
+        );
     }
 }

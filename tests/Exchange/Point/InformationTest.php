@@ -25,6 +25,7 @@ class InformationTest extends TestCase
             new Subject(
                 $this->mockExchangePoint(),
                 'methodName',
+                'Test description',
                 'com.test.action.name',
                  $this->arguments = new Collection([
                     new Argument('request', IncomingRequest::class),
@@ -36,6 +37,7 @@ class InformationTest extends TestCase
             new Subject(
                 $this->mockExchangePoint(),
                 'methodName1',
+                'Test description',
                 'com.test.action.name1',
                 $this->arguments = new Collection([
                     new Argument('request', IncomingRequest::class)

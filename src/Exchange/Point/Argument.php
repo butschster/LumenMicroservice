@@ -2,10 +2,13 @@
 
 namespace Butschster\Exchanger\Exchange\Point;
 
+use Illuminate\Contracts\Support\Arrayable;
+use JsonSerializable;
+
 /**
  * @internal
  */
-class Argument
+class Argument implements Arrayable, JsonSerializable
 {
     protected string $name;
     protected string $class;
@@ -42,5 +45,18 @@ class Argument
     public function is(string ...$classes): bool
     {
         return in_array($this->getClass(), $classes);
+    }
+
+    public function toArray()
+    {
+        return [
+            'class' => $this->getClass(),
+            'name' => $this->getName(),
+        ];
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 }

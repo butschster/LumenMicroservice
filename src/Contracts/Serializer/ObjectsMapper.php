@@ -3,6 +3,7 @@
 namespace Butschster\Exchanger\Contracts\Serializer;
 
 use Butschster\Exchanger\Contracts\Exchange\Payload;
+use JMS\Serializer\Builder\DriverFactoryInterface;
 
 interface ObjectsMapper
 {

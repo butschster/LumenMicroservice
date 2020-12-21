@@ -2,14 +2,17 @@
 
 namespace Butschster\Exchanger\Exchange\Point;
 
+use Exception;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use Butschster\Exchanger\Contracts\Exchange;
 use Butschster\Exchanger\Contracts\Exchange\Route;
+use JsonSerializable;
 
 /**
  * @internal
  */
-class Subject implements Route
+class Subject implements Route, Arrayable, JsonSerializable
 {
     /** Subject name */
     protected string $subject;
@@ -18,6 +21,15 @@ class Subject implements Route
 
     /** Subject method name */
     protected string $name;
+
+    /** Subject method summary */
+    private string $description;
+
+    /** Subject request payload */
+    protected ?string $requestPayload = null;
+
+    /** Subject response payload */
+    protected ?string $responsePayload = null;
 
     /** Suject method arguments */
     protected Collection $arguments;
@@ -31,18 +43,24 @@ class Subject implements Route
     public function __construct(
         Exchange\Point $exchange,
         string $name,
+        string $description,
         string $subject,
         Collection $parameters,
         array $middleware,
-        array $disabledMiddleware = []
+        array $disabledMiddleware = [],
+        ?string $requestPayload = null,
+        ?string $responsePayload = null
     )
     {
         $this->exchange = $exchange;
         $this->name = $name;
         $this->subject = $subject;
+        $this->requestPayload = $requestPayload;
+        $this->responsePayload = $responsePayload;
         $this->middleware = $middleware;
         $this->arguments = $parameters;
         $this->disabledMiddleware = $disabledMiddleware;
+        $this->description = $description;
     }
 
     /**
@@ -55,6 +73,15 @@ class Subject implements Route
     }
 
     /**
+     * Get class method summary
+     * @return string
+     */
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    /**
      * Get subject name
      * @return string
      */
@@ -64,8 +91,26 @@ class Subject implements Route
     }
 
     /**
+     * Get subject request payload class name
+     * @return string|null
+     */
+    public function getRequestPayload(): ?string
+    {
+        return $this->requestPayload;
+    }
+
+    /**
+     * Get subject response payload class name
+     * @return string|null
+     */
+    public function getResponsePayload(): ?string
+    {
+        return $this->responsePayload;
+    }
+
+    /**
      * Get class method arguments
-     * @return Collection
+     * @return Collection|Argument[]
      */
     public function getArguments(): Collection
     {
@@ -103,5 +148,23 @@ class Subject implements Route
             [$this->exchange, $this->getName()],
             $dependencies
         );
+    }
+
+    public function toArray()
+    {
+        return [
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
+            'arguments' => $this->getArguments()->toArray(),
+            'middleware' => $this->getMiddleware(),
+            'disabledMiddleware' => $this->getDisabledMiddleware(),
+            'request_payload' => $this->getRequestPayload(),
+            'response_payload' => $this->getResponsePayload(),
+        ];
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 }
