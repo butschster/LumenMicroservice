@@ -25,9 +25,9 @@ interface Consumer
     /**
      * Reply to a received message
      * @param AMQPMessage $message
-     * @param string $replyTo
+     * @param string|null $replyTo
      */
-    public function reply(AMQPMessage $message, string $replyTo): void;
+    public function reply(AMQPMessage $message, ?string $replyTo = null): void;
 
     /**
      * Reject a message

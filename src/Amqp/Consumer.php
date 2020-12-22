@@ -42,9 +42,9 @@ class Consumer implements \Butschster\Exchanger\Contracts\Amqp\Consumer
     }
 
     /** @inheritDoc */
-    public function reply(AMQPMessage $message, string $replyTo): void
+    public function reply(AMQPMessage $message, ?string $replyTo = null): void
     {
-        $this->connector->getChannel()->basic_publish($message, '', $replyTo);
+        $this->connector->getChannel()->basic_publish($message, '', (string)$replyTo);
     }
 
     /** @inheritDoc */
