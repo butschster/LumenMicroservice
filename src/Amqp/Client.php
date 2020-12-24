@@ -65,7 +65,7 @@ class Client implements ClientContract
     /** @inheritDoc */
     public function request(string $subject, string $payload, bool $persistent = true): string
     {
-        $response = null;
+        $response = '{}';
 
         $this->requester->request(
             $this->properties,

@@ -21,7 +21,7 @@ interface Client
      * @param string $subject
      * @param string $payload
      * @param bool $persistent
-     * @return string
+     * @return string JSON string with response
      */
     public function request(string $subject, string $payload, bool $persistent = true): string;
 
