@@ -46,9 +46,9 @@ class ExchangeServiceProvider extends ServiceProvider
     private function registerExchangeManager()
     {
         $this->app->singleton(Exchange\Config::class, ExchangeConfig::class);
-        $this->app->singleton(Exchange\Client::class, AmqpExchangeClient::class);
-        $this->app->singleton(ExchangeManagerContract::class, ExchangeManager::class);
-        $this->app->singleton(Exchange\IncomingRequest::class, IncomingRequest::class);
+        $this->app->bind(Exchange\Client::class, AmqpExchangeClient::class);
+        $this->app->bind(ExchangeManagerContract::class, ExchangeManager::class);
+        $this->app->bind(Exchange\IncomingRequest::class, IncomingRequest::class);
     }
 
     private function registerSerializer()
@@ -81,7 +81,7 @@ class ExchangeServiceProvider extends ServiceProvider
 
     private function registerAmqp()
     {
-        $this->app->singleton(ConnectorContract::class, function () {
+        $this->app->bind(ConnectorContract::class, function () {
             $config = $this->app[Config::class];
 
             return new Connector(
@@ -98,9 +98,9 @@ class ExchangeServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(ConsumerContract::class, Consumer::class);
-        $this->app->singleton(RequesterContract::class, Requester::class);
-        $this->app->singleton(PublisherContract::class, Publisher::class);
+        $this->app->bind(ConsumerContract::class, Consumer::class);
+        $this->app->bind(RequesterContract::class, Requester::class);
+        $this->app->bind(PublisherContract::class, Publisher::class);
     }
 
     private function registerPayloadFactory()

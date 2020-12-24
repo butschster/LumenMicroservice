@@ -31,19 +31,19 @@ class ExchangeServiceProviderTest extends TestCase
     function test_register()
     {
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\Config::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\Client::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(ExchangeManagerContract::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\IncomingRequest::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(Exchange\Client::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(ExchangeManagerContract::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(Exchange\IncomingRequest::class);
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\PayloadFactory::class);
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\Request\TokenDecoder::class);
 
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(SerializerContract::class);
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(SerializerContract\ObjectsMapper::class);
 
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(ConnectorContract::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(ConsumerContract::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(RequesterContract::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(PublisherContract::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(ConnectorContract::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(ConsumerContract::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(RequesterContract::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(PublisherContract::class);
 
         $this->provider->register();
     }
