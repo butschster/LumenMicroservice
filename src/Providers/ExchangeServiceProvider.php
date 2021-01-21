@@ -31,6 +31,7 @@ use Butschster\Exchanger\Exchange\DefaultPayloadFactory;
 use Butschster\Exchanger\ExchangeManager;
 use Butschster\Exchanger\Jms\Serializer;
 use Butschster\Exchanger\Jms\Config as SerializerConfig;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 
 class ExchangeServiceProvider extends ServiceProvider
 {
@@ -53,7 +54,7 @@ class ExchangeServiceProvider extends ServiceProvider
 
     private function registerSerializer()
     {
-        $this->app->singleton(SerializerContract::class, function() {
+        $this->app->bind(SerializerContract::class, function () {
             $builder = new SerializerBuilder();
 
             return new Serializer(
@@ -63,11 +64,11 @@ class ExchangeServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(SerializerContract\ObjectsMapper::class, function () {
+        $this->app->bind(SerializerContract\ObjectsMapper::class, function () {
             $config = $this->app[SerializerConfig::class];
 
             return new ObjectsMapper(
-                new CallbackDriverFactory(function (array $metadataDirs, Reader $annotationReader) use($config) {
+                new CallbackDriverFactory(function (array $metadataDirs, Reader $annotationReader) use ($config) {
                     return new Mapping\Driver(
                         $config,
                         new Parser()
@@ -84,9 +85,9 @@ class ExchangeServiceProvider extends ServiceProvider
         $this->app->bind(ConnectorContract::class, function () {
             $config = $this->app[Config::class];
 
-            return new Connector(
-                $config,
-                new AMQPSSLConnection(
+
+            if ($config->getProperty('ssl_connection')) {
+                $connection = new AMQPSSLConnection(
                     $config->getProperty('host'),
                     $config->getProperty('port'),
                     $config->getProperty('username'),
@@ -94,7 +95,25 @@ class ExchangeServiceProvider extends ServiceProvider
                     $config->getProperty('vhost'),
                     $config->getProperty('ssl_options'),
                     $config->getProperty('connect_options')
-                )
+                );
+            } else {
+                $connection = AMQPStreamConnection::create_connection(
+                    [
+                        [
+                            'host' => $config->getProperty('host'),
+                            'port' => $config->getProperty('port'),
+                            'user' => $config->getProperty('username'),
+                            'password' => $config->getProperty('password'),
+                            'vhost' => $config->getProperty('vhost')
+                        ],
+                    ],
+                    $config->getProperty('connect_options')
+                );
+            }
+
+            return new Connector(
+                $config,
+                $connection
             );
         });
 

@@ -1,5 +1,10 @@
 <?php
 
+$sslOptions = [];
+if (env('RABBITMQ_SSL')) {
+    $sslOptions['verify_peer'] = true;
+}
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -22,8 +27,13 @@ return [
             'username' => env('RABBITMQ_USERNAME'),
             'password' => env('RABBITMQ_PASSWORD'),
             'vhost' => env('RABBITMQ_VHOST', '/'),
-            'connect_options' => [],
-            'ssl_options' => [],
+            'connect_options' => [
+                'read_write_timeout' => 30,    // needs to be at least 2x heartbeat
+                'keepalive' => false, // doesn't work with ssl connections
+                'heartbeat' => 15
+            ],
+            'ssl_connection' => env('RABBITMQ_SSL'),
+            'ssl_options' => $sslOptions,
 
             'exchange' => 'amq.topic',
             'exchange_type' => 'topic',
