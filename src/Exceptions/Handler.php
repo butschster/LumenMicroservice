@@ -8,7 +8,6 @@ use Illuminate\Validation\ValidationException;
 use NunoMaduro\Collision\Adapters\Laravel\Inspector;
 use NunoMaduro\Collision\SolutionsRepositories\NullSolutionsRepository;
 use NunoMaduro\Collision\Writer;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Exception\ExceptionInterface;
 use Throwable;
 use Butschster\Exchanger\Contracts\Exchange\IncomingRequest;
@@ -32,13 +31,7 @@ class Handler implements ExceptionHandler
             return;
         }
 
-        $logger = $this->container->make(LoggerInterface::class);
-
-        if (method_exists($logger, 'handleException')) {
-            $logger->handleException($this, $e);
-        } else {
-            $logger->error($e);
-        }
+        report($e);
     }
 
     public function shouldReport(Throwable $e)
