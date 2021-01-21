@@ -5,6 +5,8 @@ namespace Butschster\Tests\Exchange\Request;
 use Butschster\Exchanger\Contracts\Exchange\IncomingRequest;
 use Butschster\Exchanger\Contracts\Exchange\Request\Token;
 use Butschster\Exchanger\Contracts\Exchange\Request\TokenDecoder;
+use Butschster\Exchanger\Events\Route\Dispatched;
+use Butschster\Exchanger\Events\Route\ExceptionThrown;
 use Butschster\Exchanger\Exceptions\Handler;
 use Butschster\Exchanger\Exchange\Request\DependencyResolver;
 use Butschster\Exchanger\Exchange\Request\Dispatcher;
@@ -23,6 +25,7 @@ class DispatcherTest extends TestCase
     private $serializer;
     private \Mockery\MockInterface $pipeline;
     private \Mockery\MockInterface $dependencyResolver;
+    private \Mockery\MockInterface $events;
 
     protected function setUp(): void
     {
@@ -32,6 +35,7 @@ class DispatcherTest extends TestCase
         $this->container = $this->mockContainer();
         $this->serializer = $this->mockSerializer();
         $this->pipeline = $this->mock(Pipeline::class);
+        $this->events = $this->mock(\Illuminate\Contracts\Events\Dispatcher::class);
         $this->dependencyResolver = $this->mock(DependencyResolver::class);
     }
 
@@ -83,6 +87,14 @@ class DispatcherTest extends TestCase
             throw $exception;
         });
 
+        $this->events->shouldReceive('dispatch')
+            ->once()
+            ->withArgs(function (ExceptionThrown $event) use($route, $request, $exception) {
+                return $event->route === $route
+                    && $event->request === $request
+                    && $event->e === $exception;
+            });
+
         $this->exceptionsHandler->shouldReceive('report')->once()->with($exception);
         $this->exceptionsHandler->shouldReceive('render')->once()->with($request, $exception);
 
@@ -93,6 +105,7 @@ class DispatcherTest extends TestCase
     {
         return new Dispatcher(
             $this->exceptionsHandler,
+            $this->events,
             $this->container,
             $this->serializer,
             $this->pipeline,
@@ -110,6 +123,13 @@ class DispatcherTest extends TestCase
         $route->shouldReceive('getArguments')->once()->andReturn($args);
         $route->shouldReceive('getMiddleware')->once()->andReturn([]);
         $route->shouldReceive('call')->once()->with($dependencies);
+
+        $this->events->shouldReceive('dispatch')
+            ->once()
+            ->withArgs(function (Dispatched $event) use($route, $request) {
+                return $event->route === $route
+                    && $event->request === $request;
+            });
 
         $message = $this->mockAmqpMessage();
         $message->shouldReceive('getPayload')

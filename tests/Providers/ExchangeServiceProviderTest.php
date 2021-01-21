@@ -37,8 +37,8 @@ class ExchangeServiceProviderTest extends TestCase
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\PayloadFactory::class);
         $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(Exchange\Request\TokenDecoder::class);
 
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(SerializerContract::class);
-        $this->container->shouldReceive('singleton')->once()->withSomeOfArgs(SerializerContract\ObjectsMapper::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(SerializerContract::class);
+        $this->container->shouldReceive('bind')->once()->withSomeOfArgs(SerializerContract\ObjectsMapper::class);
 
         $this->container->shouldReceive('bind')->once()->withSomeOfArgs(ConnectorContract::class);
         $this->container->shouldReceive('bind')->once()->withSomeOfArgs(ConsumerContract::class);

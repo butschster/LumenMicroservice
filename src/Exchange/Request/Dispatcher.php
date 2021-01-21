@@ -3,9 +3,12 @@
 namespace Butschster\Exchanger\Exchange\Request;
 
 use Butschster\Exchanger\Contracts\Exchange\Request\TokenDecoder;
+use Butschster\Exchanger\Events\Route\Dispatched;
+use Butschster\Exchanger\Events\Route\ExceptionThrown;
 use Closure;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher as EventsDispatcher;
 use Illuminate\Pipeline\Pipeline;
 use Throwable;
 use Butschster\Exchanger\Contracts\Amqp\Message;
@@ -25,9 +28,11 @@ class Dispatcher
     private Container $container;
     private Handler $exceptionsHandler;
     private DependencyResolver $dependencyResolver;
+    private EventsDispatcher $events;
 
     public function __construct(
         Handler $exceptionsHandler,
+        EventsDispatcher $events,
         Container $container,
         Serializer $serializer,
         Pipeline $pipeline,
@@ -39,6 +44,7 @@ class Dispatcher
         $this->container = $container;
         $this->exceptionsHandler = $exceptionsHandler;
         $this->dependencyResolver = $dependencyResolver;
+        $this->events = $events;
     }
 
     /**
@@ -56,11 +62,19 @@ class Dispatcher
                 $request, $route->getArguments()
             );
 
-            $this->sendThroughPipeline($route->getMiddleware(), function () use ($route, $dependencies) {
+            $this->sendThroughPipeline($route->getMiddleware(), function () use ($route, $request, $dependencies) {
                 $route->call($dependencies);
+
+                $this->events->dispatch(
+                    new Dispatched($route, $request)
+                );
             });
         } catch (Throwable $e) {
             $this->handleException($request, $e);
+
+            $this->events->dispatch(
+                new ExceptionThrown($route, $request, $e)
+            );
         }
     }
 
