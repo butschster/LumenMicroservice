@@ -5,7 +5,6 @@ namespace Butschster\Exchanger\Console\Commands;
 use Illuminate\Console\Command;
 use Butschster\Exchanger\Contracts\Exchange\Point;
 use Butschster\Exchanger\Contracts\ExchangeManager;
-use Butschster\Exchanger\Exchange\ConsoleLogger;
 
 class RunMicroservice extends Command
 {
@@ -14,9 +13,6 @@ class RunMicroservice extends Command
 
     public function handle(ExchangeManager $exchange, Point $service)
     {
-        $logger = new ConsoleLogger($this);
-        $exchange->setLogger($logger);
-
         $exchange->register(
             $service
         );
